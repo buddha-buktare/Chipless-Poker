@@ -1,4 +1,4 @@
-package me.buddha.chiplesspoker.data.model
+package me.buddha.chiplesspoker.domain
 
 enum class StreetType {
     PREFLOP,
