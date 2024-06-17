@@ -30,4 +30,10 @@ interface DatabaseModule {
         GameDatabase::class.java,
         "GameDb"
     ).build()
+
+    @Provides
+    @Singleton
+    fun provideGameDao(
+        db: GameDatabase
+    ) = db.gameDao()
 }
