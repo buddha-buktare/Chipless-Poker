@@ -7,21 +7,20 @@ import com.google.gson.reflect.TypeToken
 import me.buddha.chiplesspoker.data.model.BlindStructureEntity
 import me.buddha.chiplesspoker.data.model.PlayerEntity
 import me.buddha.chiplesspoker.domain.StreetType
-import java.util.Date
+import java.time.LocalDateTime
 
 class Converters {
 
     private val gson = Gson()
 
     @TypeConverter
-    fun fromDate(date: Date?): String {
-        return gson.toJson(date)
+    fun fromDate(date: LocalDateTime?): String {
+        return date.toString()
     }
 
     @TypeConverter
-    fun toDate(data: String): Date {
-        val type = object : TypeToken<Date>() {}.type
-        return gson.fromJson(data, type)
+    fun toDate(data: String): LocalDateTime {
+        return LocalDateTime.parse(data)
     }
 
     @TypeConverters

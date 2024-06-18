@@ -13,5 +13,6 @@ interface GameRepository {
     fun delete(gameEntity: GameEntity)
 
     fun deleteById(id: Long)
+
     fun deleteAll()
 }
