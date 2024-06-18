@@ -1,21 +1,21 @@
 package me.buddha.chiplesspoker.di
 
+import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import me.buddha.chiplesspoker.data.local.GameDao
+import me.buddha.chiplesspoker.data.repository.GameRepository
 import me.buddha.chiplesspoker.data.repository.GameRepositoryImpl
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-class ApplicationModule {
+abstract class ApplicationModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideGameRepository(
-        gameDao: GameDao
-    ): GameRepositoryImpl = GameRepositoryImpl(gameDao)
+    abstract fun bindGameRepository(
+        repositoryImpl: GameRepositoryImpl
+    ): GameRepository
 
 }

@@ -7,7 +7,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import me.buddha.chiplesspoker.data.local.GameDao
 import me.buddha.chiplesspoker.data.local.GameDatabase
 import javax.inject.Singleton
 
@@ -17,23 +16,17 @@ interface DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideMyModelDao(
-        appDatabase: GameDatabase
-    ): GameDao = appDatabase.gameDao()
-
-    @Provides
-    @Singleton
     fun provideGameDatabase(
         @ApplicationContext appContext: Context
     ): GameDatabase = Room.databaseBuilder(
         context = appContext,
         GameDatabase::class.java,
-        "GameDb"
+        "GameDB"
     ).build()
 
     @Provides
     @Singleton
     fun provideGameDao(
-        db: GameDatabase
-    ) = db.gameDao()
+        gameDatabase: GameDatabase
+    ) = gameDatabase.gameDao()
 }
