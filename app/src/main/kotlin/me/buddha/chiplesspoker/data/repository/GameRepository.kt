@@ -8,10 +8,11 @@ interface GameRepository {
 
     fun getGameById(id: Long):Flow<GameEntity>
 
-    fun insertOrReplaceGame(gameEntity: GameEntity)
+    suspend fun insertOrReplaceGame(gameEntity: GameEntity)
 
-    fun delete(gameEntity: GameEntity)
+    suspend fun delete(gameEntity: GameEntity)
 
-    fun deleteById(id: Long)
-    fun deleteAll()
+    suspend fun deleteById(id: Long)
+
+    suspend fun deleteAll()
 }
