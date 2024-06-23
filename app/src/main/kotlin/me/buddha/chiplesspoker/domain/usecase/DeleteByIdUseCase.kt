@@ -7,7 +7,7 @@ class DeleteByIdUseCase @Inject constructor(
     private val gameRepository: GameRepository
 ) {
 
-    operator fun invoke(id: Long) {
+    suspend operator fun invoke(id: Long) {
         gameRepository.deleteById(id)
     }
 }

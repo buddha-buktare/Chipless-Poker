@@ -6,22 +6,22 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import me.buddha.chiplesspoker.data.model.BlindStructureEntity
 import me.buddha.chiplesspoker.data.model.PlayerEntity
+import me.buddha.chiplesspoker.data.model.PotEntity
 import me.buddha.chiplesspoker.domain.StreetType
-import java.util.Date
+import java.time.LocalDateTime
 
 class Converters {
 
     private val gson = Gson()
 
     @TypeConverter
-    fun fromDate(date: Date?): String {
-        return gson.toJson(date)
+    fun fromDate(date: LocalDateTime?): String {
+        return date.toString()
     }
 
     @TypeConverter
-    fun toDate(data: String): Date {
-        val type = object : TypeToken<Date>() {}.type
-        return gson.fromJson(data, type)
+    fun toDate(data: String): LocalDateTime {
+        return LocalDateTime.parse(data)
     }
 
     @TypeConverters
@@ -53,6 +53,17 @@ class Converters {
     @TypeConverter
     fun toPlayerList(playersString: String): List<PlayerEntity> {
         val listType = object : TypeToken<List<PlayerEntity>>() {}.type
+        return gson.fromJson(playersString, listType)
+    }
+
+    @TypeConverter
+    fun fromPotList(players: List<PotEntity>): String {
+        return gson.toJson(players)
+    }
+
+    @TypeConverter
+    fun toPotList(playersString: String): List<PotEntity> {
+        val listType = object : TypeToken<List<PotEntity>>() {}.type
         return gson.fromJson(playersString, listType)
     }
 }

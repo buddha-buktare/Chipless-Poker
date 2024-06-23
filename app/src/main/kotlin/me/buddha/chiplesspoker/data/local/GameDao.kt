@@ -16,15 +16,15 @@ interface GameDao {
     fun getGameById(id: Long): Flow<GameEntity>
 
     @Upsert
-    fun insertOrReplaceGame(gameEntity: GameEntity)
+    suspend fun insertOrReplaceGame(gameEntity: GameEntity)
 
     @Delete
-    fun delete(gameEntity: GameEntity)
+    suspend fun delete(gameEntity: GameEntity)
 
     @Query("DELETE FROM games WHERE id = :id")
-    fun deleteById(id: Long)
+    suspend fun deleteById(id: Long)
 
     @Query("DELETE FROM games")
-    fun deleteAll()
+    suspend fun deleteAll()
 
 }

@@ -6,7 +6,11 @@ import androidx.room.TypeConverters
 import me.buddha.chiplesspoker.data.converter.Converters
 import me.buddha.chiplesspoker.data.model.GameEntity
 
-@Database(entities = [GameEntity::class], version = 1)
+@Database(
+    entities = [GameEntity::class],
+    version = 1,
+    exportSchema = true
+)
 @TypeConverters(Converters::class)
 abstract class GameDatabase: RoomDatabase() {
 
