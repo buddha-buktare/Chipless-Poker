@@ -9,7 +9,7 @@ data class Game(
     val dateSaved: LocalDateTime? = null,
     val initialBuyIn: Long,
     val street: StreetType,
-    val pot: Long,
+    val pots: List<Pot>,
     val blindStructure: BlindStructure,
     val players: List<Player>,
     val isAutoSaved: Boolean = false
@@ -20,7 +20,7 @@ fun Game.asEntity() = GameEntity (
     dateSaved = this.dateSaved,
     initialBuyIn = this.initialBuyIn,
     street = this.street,
-    pot = this.pot,
+    pots = this.pots.map { it.asEntity() },
     blindStructure = this.blindStructure.asEntity(),
     players = this.players.map { it.asEntity() },
     isAutoSaved = isAutoSaved

@@ -16,7 +16,7 @@ data class GameEntity(
     val dateSaved: LocalDateTime? = null,
     val initialBuyIn: Long,
     val street: StreetType,
-    val pot: Long,
+    val pots: List<PotEntity>,
     val blindStructure: BlindStructureEntity,
     val players: List<PlayerEntity>,
     val isAutoSaved: Boolean = false
@@ -27,7 +27,7 @@ fun GameEntity.asExternalModel() = Game (
     dateSaved = this.dateSaved,
     initialBuyIn = this.initialBuyIn,
     street = this.street,
-    pot = this.pot,
+    pots = this.pots.map { it.asExternalModel() },
     blindStructure = this.blindStructure.asExternalModel(),
     players = this.players.map { it.asExternalModel() },
     isAutoSaved = isAutoSaved
