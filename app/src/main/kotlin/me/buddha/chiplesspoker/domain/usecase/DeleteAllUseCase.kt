@@ -7,7 +7,7 @@ class DeleteAllUseCase @Inject constructor(
     private val gameRepository: GameRepository
 ) {
 
-    operator fun invoke() {
+    suspend operator fun invoke() {
         gameRepository.deleteAll()
     }
 }

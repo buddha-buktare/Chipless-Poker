@@ -9,7 +9,7 @@ class InsertOrReplaceGameUseCase @Inject constructor(
     private val gameRepository: GameRepository
 ) {
 
-    operator fun invoke(game: Game) {
+    suspend operator fun invoke(game: Game) {
         return gameRepository.insertOrReplaceGame(
             game.asEntity()
         )
