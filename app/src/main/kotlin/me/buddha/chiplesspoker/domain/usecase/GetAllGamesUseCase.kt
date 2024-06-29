@@ -3,16 +3,16 @@ package me.buddha.chiplesspoker.domain.usecase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import me.buddha.chiplesspoker.data.model.asExternalModel
-import me.buddha.chiplesspoker.data.repository.GameRepository
-import me.buddha.chiplesspoker.domain.model.Game
+import me.buddha.chiplesspoker.data.repository.TableRepository
+import me.buddha.chiplesspoker.domain.model.Table
 import javax.inject.Inject
 
-class GetAllGamesUseCase @Inject constructor(
-    private val gameRepository: GameRepository
+class GetAllTablesUseCase @Inject constructor(
+    private val tableRepository: TableRepository
 ) {
 
-    operator fun invoke(): Flow<List<Game>> {
-        return gameRepository.getAllGames().map { list ->
+    operator fun invoke(): Flow<List<Table>> {
+        return tableRepository.getAllTables().map { list ->
             list.map { it.asExternalModel() }
         }
     }
