@@ -5,12 +5,12 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import me.buddha.chiplesspoker.data.converter.Converters
 import me.buddha.chiplesspoker.domain.StreetType
-import me.buddha.chiplesspoker.domain.model.Game
+import me.buddha.chiplesspoker.domain.model.Table
 import java.time.LocalDateTime
 
-@Entity(tableName = "games")
+@Entity(tableName = "tables")
 @TypeConverters(Converters::class)
-data class GameEntity(
+data class TableEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
     val dateSaved: LocalDateTime? = null,
@@ -22,7 +22,7 @@ data class GameEntity(
     val isAutoSaved: Boolean = false
 )
 
-fun GameEntity.asExternalModel() = Game (
+fun TableEntity.asExternalModel() = Table(
     id = this.id,
     dateSaved = this.dateSaved,
     initialBuyIn = this.initialBuyIn,

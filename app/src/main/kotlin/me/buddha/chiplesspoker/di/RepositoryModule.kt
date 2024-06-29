@@ -4,9 +4,9 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import me.buddha.chiplesspoker.data.local.GameDao
-import me.buddha.chiplesspoker.data.repository.GameRepository
-import me.buddha.chiplesspoker.data.repository.GameRepositoryImpl
+import me.buddha.chiplesspoker.data.local.TableDao
+import me.buddha.chiplesspoker.data.repository.TableRepository
+import me.buddha.chiplesspoker.data.repository.TableRepositoryImpl
 import javax.inject.Singleton
 
 @Module
@@ -15,8 +15,8 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideGameRepository(
-        gameDao: GameDao
-    ): GameRepository = GameRepositoryImpl(gameDao)
+    fun provideTableRepository(
+        tableDao: TableDao
+    ): TableRepository = TableRepositoryImpl(tableDao)
 
 }

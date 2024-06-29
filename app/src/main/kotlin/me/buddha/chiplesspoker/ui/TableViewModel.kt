@@ -8,18 +8,18 @@ import kotlinx.coroutines.launch
 import me.buddha.chiplesspoker.domain.StreetType.PREFLOP
 import me.buddha.chiplesspoker.domain.model.BlindLevel
 import me.buddha.chiplesspoker.domain.model.BlindStructure
-import me.buddha.chiplesspoker.domain.model.Game
 import me.buddha.chiplesspoker.domain.model.Player
 import me.buddha.chiplesspoker.domain.model.Pot
+import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.usecase.DeleteAllUseCase
 import me.buddha.chiplesspoker.domain.usecase.DeleteByIdUseCase
-import me.buddha.chiplesspoker.domain.usecase.GetAllGamesUseCase
-import me.buddha.chiplesspoker.domain.usecase.GetGameByIdUseCase
-import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceGameUseCase
+import me.buddha.chiplesspoker.domain.usecase.GetAllTablesUseCase
+import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
+import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import java.time.LocalDateTime
 import javax.inject.Inject
 
-val SAMPLE_GAME = Game(
+val SAMPLE_Table = Table(
     id = 4,
     dateSaved = LocalDateTime.now(),
     initialBuyIn = 1000,
@@ -49,53 +49,53 @@ val SAMPLE_GAME = Game(
 )
 
 @HiltViewModel
-class GameViewModel @Inject constructor(
+class TableViewModel @Inject constructor(
     private val deleteAllUseCase: DeleteAllUseCase,
     private val deleteByIdUseCase: DeleteByIdUseCase,
-    private val getAllGamesUseCase: GetAllGamesUseCase,
-    private val getGameByIdUseCase: GetGameByIdUseCase,
-    private val insertOrReplaceGameUseCase: InsertOrReplaceGameUseCase,
+    private val getAllTablesUseCase: GetAllTablesUseCase,
+    private val getTableByIdUseCase: GetTableByIdUseCase,
+    private val insertOrReplaceTableUseCase: InsertOrReplaceTableUseCase,
 ) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            insertGame(SAMPLE_GAME)
+            insertTable(SAMPLE_Table)
             delay(10000)
-            deleteAllGames()
+            deleteAllTables()
         }
     }
 
-    private fun deleteAllGames() {
+    private fun deleteAllTables() {
         viewModelScope.launch {
             deleteAllUseCase()
         }
     }
 
-    private fun deleteGame(id: Long) {
+    private fun deleteTable(id: Long) {
         viewModelScope.launch {
             deleteByIdUseCase(id)
         }
     }
 
-    private fun getAllGames() {
+    private fun getAllTables() {
         viewModelScope.launch {
-            getAllGamesUseCase().collect {
+            getAllTablesUseCase().collect {
 
             }
         }
     }
 
-    private fun getGameDetails(id: Long) {
+    private fun getTableDetails(id: Long) {
         viewModelScope.launch {
-            getGameByIdUseCase(id).collect {
+            getTableByIdUseCase(id).collect {
 
             }
         }
     }
 
-    private fun insertGame(game: Game) {
+    private fun insertTable(table: Table) {
         viewModelScope.launch {
-            insertOrReplaceGameUseCase(game)
+            insertOrReplaceTableUseCase(table)
         }
     }
 }
