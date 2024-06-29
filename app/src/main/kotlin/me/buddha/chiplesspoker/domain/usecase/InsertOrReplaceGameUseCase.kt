@@ -1,17 +1,17 @@
 package me.buddha.chiplesspoker.domain.usecase
 
-import me.buddha.chiplesspoker.data.repository.GameRepository
-import me.buddha.chiplesspoker.domain.model.Game
+import me.buddha.chiplesspoker.data.repository.TableRepository
+import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.model.asEntity
 import javax.inject.Inject
 
-class InsertOrReplaceGameUseCase @Inject constructor(
-    private val gameRepository: GameRepository
+class InsertOrReplaceTableUseCase @Inject constructor(
+    private val tableRepository: TableRepository
 ) {
 
-    suspend operator fun invoke(game: Game) {
-        return gameRepository.insertOrReplaceGame(
-            game.asEntity()
+    suspend operator fun invoke(table: Table) {
+        return tableRepository.insertOrReplaceTable(
+            table.asEntity()
         )
     }
 }

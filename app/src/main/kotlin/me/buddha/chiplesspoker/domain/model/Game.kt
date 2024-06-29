@@ -1,10 +1,10 @@
 package me.buddha.chiplesspoker.domain.model
 
-import me.buddha.chiplesspoker.data.model.GameEntity
+import me.buddha.chiplesspoker.data.model.TableEntity
 import me.buddha.chiplesspoker.domain.StreetType
 import java.time.LocalDateTime
 
-data class Game(
+data class Table(
     val id: Long,
     val dateSaved: LocalDateTime? = null,
     val initialBuyIn: Long,
@@ -15,7 +15,7 @@ data class Game(
     val isAutoSaved: Boolean = false
 )
 
-fun Game.asEntity() = GameEntity (
+fun Table.asEntity() = TableEntity(
     id = this.id,
     dateSaved = this.dateSaved,
     initialBuyIn = this.initialBuyIn,

@@ -4,15 +4,15 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import me.buddha.chiplesspoker.data.converter.Converters
-import me.buddha.chiplesspoker.data.model.GameEntity
+import me.buddha.chiplesspoker.data.model.TableEntity
 
 @Database(
-    entities = [GameEntity::class],
+    entities = [TableEntity::class],
     version = 1,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
-abstract class GameDatabase: RoomDatabase() {
+abstract class TableDatabase : RoomDatabase() {
 
-    abstract fun gameDao(): GameDao
+    abstract fun tableDao(): TableDao
 }
