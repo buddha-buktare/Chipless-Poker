@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import me.buddha.chiplesspoker.ui.GameViewModel
+import me.buddha.chiplesspoker.ui.TableViewModel
 import me.buddha.chiplesspoker.ui.theme.ChiplessPokerTheme
 
 @AndroidEntryPoint
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(
-    viewModel: GameViewModel,
+    viewModel: TableViewModel,
     name: String,
     modifier: Modifier = Modifier
 ) {
