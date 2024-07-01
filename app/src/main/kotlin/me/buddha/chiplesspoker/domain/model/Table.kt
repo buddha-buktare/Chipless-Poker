@@ -5,7 +5,7 @@ import me.buddha.chiplesspoker.domain.StreetType
 import java.time.LocalDateTime
 
 data class Table(
-    val id: Long,
+    val id: Long? = null,
     val dateSaved: LocalDateTime? = null,
     val initialBuyIn: Long,
     val street: StreetType,

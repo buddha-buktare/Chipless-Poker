@@ -8,6 +8,7 @@ import me.buddha.chiplesspoker.data.model.BlindStructureEntity
 import me.buddha.chiplesspoker.data.model.PlayerEntity
 import me.buddha.chiplesspoker.data.model.PotEntity
 import me.buddha.chiplesspoker.domain.StreetType
+import me.buddha.chiplesspoker.domain.usecase.DurationUnit
 import java.time.LocalDateTime
 
 class Converters {
@@ -32,6 +33,16 @@ class Converters {
     @TypeConverter
     fun toStreetType(data: String): StreetType {
         return StreetType.valueOf(data)
+    }
+
+    @TypeConverters
+    fun fromDurationUnit(type: DurationUnit): String {
+        return type.name
+    }
+
+    @TypeConverter
+    fun toDurationUnit(data: String): DurationUnit {
+        return DurationUnit.valueOf(data)
     }
 
     @TypeConverter

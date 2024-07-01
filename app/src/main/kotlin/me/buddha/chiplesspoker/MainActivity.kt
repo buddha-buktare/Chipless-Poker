@@ -4,16 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import me.buddha.chiplesspoker.ui.TableViewModel
+import me.buddha.chiplesspoker.domain.Destination.CreateTable
+import me.buddha.chiplesspoker.ui.createtable.CreateTableScreen
 import me.buddha.chiplesspoker.ui.theme.ChiplessPokerTheme
 
 @AndroidEntryPoint
@@ -23,34 +19,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChiplessPokerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        viewModel = hiltViewModel(),
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = CreateTable,
+                ) {
+                    composable<CreateTable> {
+                        CreateTableScreen()
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(
-    viewModel: TableViewModel,
-    name: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ChiplessPokerTheme {
-        // Greeting("Android")
     }
 }
