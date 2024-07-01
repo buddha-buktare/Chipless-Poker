@@ -13,6 +13,7 @@ import me.buddha.chiplesspoker.domain.model.Pot
 import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.usecase.DeleteAllUseCase
 import me.buddha.chiplesspoker.domain.usecase.DeleteByIdUseCase
+import me.buddha.chiplesspoker.domain.usecase.DurationUnit.MINUTES
 import me.buddha.chiplesspoker.domain.usecase.GetAllTablesUseCase
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
@@ -28,8 +29,8 @@ val SAMPLE_Table = Table(
         Pot(50000, listOf())
     ),
     blindStructure = BlindStructure(
-        durationUnit = "Minutes",
-        levels = listOf(
+        durationUnit = MINUTES,
+        blindLevels = listOf(
             BlindLevel(
                 level = 1,
                 big = 6,
