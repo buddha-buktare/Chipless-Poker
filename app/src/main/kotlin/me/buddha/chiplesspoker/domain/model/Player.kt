@@ -3,9 +3,9 @@ package me.buddha.chiplesspoker.domain.model
 import me.buddha.chiplesspoker.data.model.PlayerEntity
 
 data class Player(
-    val name: String,
+    var name: String,
     val seatNumber: Int,
-    val chips: Long,
+    val chips: Long = 1000,
     val isDealer: Boolean = false,
 )
 
