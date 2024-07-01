@@ -1,13 +1,14 @@
 package me.buddha.chiplesspoker.data.model
 
 import me.buddha.chiplesspoker.domain.model.BlindStructure
+import me.buddha.chiplesspoker.domain.usecase.DurationUnit
 
 data class BlindStructureEntity(
-    val durationUnit: String,
-    val levels: List<BlindLevelEntity>
+    val durationUnit: DurationUnit,
+    val blindLevels: List<BlindLevelEntity>
 )
 
 fun BlindStructureEntity.asExternalModel() = BlindStructure(
     durationUnit = this.durationUnit,
-    levels = this.levels.map { it.asExternalModel() }
+    blindLevels = this.blindLevels.map { it.asExternalModel() }
 )

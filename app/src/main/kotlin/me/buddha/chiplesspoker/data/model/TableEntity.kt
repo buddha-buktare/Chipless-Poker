@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 @TypeConverters(Converters::class)
 data class TableEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long,
+    val id: Long? = null,
     val dateSaved: LocalDateTime? = null,
     val initialBuyIn: Long,
     val street: StreetType,
