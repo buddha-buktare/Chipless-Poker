@@ -14,6 +14,8 @@ import me.buddha.chiplesspoker.domain.model.BlindLevel
 import me.buddha.chiplesspoker.domain.model.BlindStructure
 import me.buddha.chiplesspoker.domain.model.Player
 import me.buddha.chiplesspoker.domain.model.Table
+import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
+import me.buddha.chiplesspoker.domain.navigation.NavigationService
 import me.buddha.chiplesspoker.domain.usecase.DurationUnit
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import javax.inject.Inject
@@ -21,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateTableViewModel @Inject constructor(
     private val insertOrReplaceTableUseCase: InsertOrReplaceTableUseCase,
+    private val navigationService: NavigationService
 ) : ViewModel() {
 
     var initialBuyInAmount by mutableLongStateOf(1000L)
@@ -114,6 +117,7 @@ class CreateTableViewModel @Inject constructor(
                     players = players,
                 )
             )
+            navigationService.navController.navigate(RunningTable(id = 3))
         }
     }
 }
