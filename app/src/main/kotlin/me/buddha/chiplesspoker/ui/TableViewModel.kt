@@ -5,18 +5,19 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import me.buddha.chiplesspoker.domain.StreetType.PREFLOP
 import me.buddha.chiplesspoker.domain.model.BlindLevel
 import me.buddha.chiplesspoker.domain.model.BlindStructure
+import me.buddha.chiplesspoker.domain.model.Hand
 import me.buddha.chiplesspoker.domain.model.Player
-import me.buddha.chiplesspoker.domain.model.Pot
 import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.usecase.DeleteAllUseCase
 import me.buddha.chiplesspoker.domain.usecase.DeleteByIdUseCase
-import me.buddha.chiplesspoker.domain.usecase.DurationUnit.MINUTES
 import me.buddha.chiplesspoker.domain.usecase.GetAllTablesUseCase
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
+import me.buddha.chiplesspoker.domain.utils.DurationUnit.MINUTES
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
+import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -25,9 +26,6 @@ val SAMPLE_Table = Table(
     dateSaved = LocalDateTime.now(),
     initialBuyIn = 1000,
     street = PREFLOP,
-    pots = listOf(
-        Pot(50000, listOf())
-    ),
     blindStructure = BlindStructure(
         durationUnit = MINUTES,
         blindLevels = listOf(
@@ -44,9 +42,11 @@ val SAMPLE_Table = Table(
             name = "Buddha",
             seatNumber = 1,
             chips = 199,
-            isDealer = true
+            isDealer = true,
+            playingStatus = PLAYING,
         )
-    )
+    ),
+    currentHand = Hand()
 )
 
 @HiltViewModel

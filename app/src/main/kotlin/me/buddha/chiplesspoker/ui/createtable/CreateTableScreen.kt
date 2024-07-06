@@ -18,8 +18,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import androidx.hilt.navigation.compose.hiltViewModel
-import me.buddha.chiplesspoker.domain.usecase.DurationUnit.HANDS
-import me.buddha.chiplesspoker.domain.usecase.DurationUnit.MINUTES
+import me.buddha.chiplesspoker.domain.utils.DurationUnit.HANDS
+import me.buddha.chiplesspoker.domain.utils.DurationUnit.MINUTES
 
 @Composable
 fun CreateTableScreen(

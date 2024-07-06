@@ -9,15 +9,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import me.buddha.chiplesspoker.domain.StreetType.PREFLOP
 import me.buddha.chiplesspoker.domain.model.BlindLevel
 import me.buddha.chiplesspoker.domain.model.BlindStructure
+import me.buddha.chiplesspoker.domain.model.Hand
 import me.buddha.chiplesspoker.domain.model.Player
 import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
 import me.buddha.chiplesspoker.domain.navigation.NavigationService
-import me.buddha.chiplesspoker.domain.usecase.DurationUnit
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
+import me.buddha.chiplesspoker.domain.utils.DurationUnit
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
+import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 import javax.inject.Inject
 
 @HiltViewModel
@@ -95,7 +97,7 @@ class CreateTableViewModel @Inject constructor(
     }
 
     fun addPlayer(index: Int, name: String) {
-        players.add(Player(name = name, seatNumber = index))
+        players.add(Player(name = name, seatNumber = index, playingStatus = PLAYING))
     }
 
     fun updatePlayer(index: Int, name: String) {
@@ -112,9 +114,9 @@ class CreateTableViewModel @Inject constructor(
                 Table(
                     initialBuyIn = initialBuyInAmount,
                     street = PREFLOP,
-                    pots = listOf(),
                     blindStructure = blindStructure,
                     players = players,
+                    currentHand = Hand()
                 )
             )
             navigationService.navController.navigate(RunningTable(id = 3))
