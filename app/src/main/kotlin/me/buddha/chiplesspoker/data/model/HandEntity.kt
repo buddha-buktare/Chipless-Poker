@@ -7,9 +7,10 @@ data class HandEntity(
     val smallBlindPlayer: Int,
     val bigBlindPlayer: Int,
     val decisivePlayer: Int,
-    val currentMaxBet: Long,
     val pots: List<PotEntity>,
     val currentPlayer: Int,
+    val currentRound: RoundEntity? = null,
+    val endOnBigBlind: Boolean = true,
 )
 
 fun HandEntity.asExternalModel() = Hand(
@@ -17,8 +18,9 @@ fun HandEntity.asExternalModel() = Hand(
     smallBlindPlayer = this.smallBlindPlayer,
     bigBlindPlayer = this.bigBlindPlayer,
     decisivePlayer = this.decisivePlayer,
-    currentMaxBet = this.currentMaxBet,
     pots = this.pots.map { it.asExternalModel() },
-    currentPlayer = currentPlayer
+    currentPlayer = currentPlayer,
+    currentRound = this.currentRound?.asExternalModel(),
+    endOnBigBlind = this.endOnBigBlind,
 )
 

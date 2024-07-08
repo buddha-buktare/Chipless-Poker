@@ -12,7 +12,8 @@ data class Table(
     val blindStructure: BlindStructure,
     val players: List<Player>,
     val isAutoSaved: Boolean = false,
-    val currentHand: Hand,
+    val currentHand: Hand?,
+    val isTableStarted: Boolean = false,
 )
 
 fun Table.asEntity() = TableEntity(
@@ -23,5 +24,6 @@ fun Table.asEntity() = TableEntity(
     blindStructure = this.blindStructure.asEntity(),
     players = this.players.map { it.asEntity() },
     isAutoSaved = this.isAutoSaved,
-    currentHand = this.currentHand.asEntity(),
+    currentHand = this.currentHand?.asEntity(),
+    isTableStarted = isTableStarted,
 )

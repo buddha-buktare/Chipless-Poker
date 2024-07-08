@@ -18,8 +18,9 @@ data class TableEntity(
     val street: StreetType,
     val blindStructure: BlindStructureEntity,
     val players: List<PlayerEntity>,
-    val currentHand: HandEntity,
-    val isAutoSaved: Boolean = false
+    val currentHand: HandEntity? = null,
+    val isAutoSaved: Boolean = false,
+    val isTableStarted: Boolean = false,
 )
 
 fun TableEntity.asExternalModel() = Table(
@@ -29,6 +30,7 @@ fun TableEntity.asExternalModel() = Table(
     street = this.street,
     blindStructure = this.blindStructure.asExternalModel(),
     players = this.players.map { it.asExternalModel() },
-    currentHand = this.currentHand.asExternalModel(),
-    isAutoSaved = isAutoSaved
+    currentHand = this.currentHand?.asExternalModel(),
+    isAutoSaved = isAutoSaved,
+    isTableStarted = isTableStarted,
 )
