@@ -6,9 +6,9 @@ import me.buddha.chiplesspoker.domain.utils.PlayingStatus
 data class Player(
     var name: String,
     val seatNumber: Int,
-    val chips: Long = 1000,
+    var chips: Long = 1000,
     val isDealer: Boolean = false,
-    val playingStatus: PlayingStatus,
+    var playingStatus: PlayingStatus,
 )
 
 fun Player.asEntity() = PlayerEntity (

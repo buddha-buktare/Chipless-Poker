@@ -3,8 +3,8 @@ package me.buddha.chiplesspoker.domain.model
 import me.buddha.chiplesspoker.data.model.PotEntity
 
 data class Pot(
-    val chips: Long,
-    val players: List<Long>,
+    var chips: Long = 0,
+    val players: List<Int>,
 )
 
 fun Pot.asEntity() = PotEntity(

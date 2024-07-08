@@ -12,19 +12,21 @@ import me.buddha.chiplesspoker.domain.utils.DurationUnit
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus
 import me.buddha.chiplesspoker.domain.utils.StreetType
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class Converters {
 
     private val gson = Gson()
+    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @TypeConverter
-    fun fromDate(date: LocalDateTime?): String {
-        return date.toString()
+    fun fromDate(date: LocalDateTime?): String? {
+        return date?.format(formatter)
     }
 
     @TypeConverter
-    fun toDate(data: String): LocalDateTime {
-        return LocalDateTime.parse(data)
+    fun toDate(data: String?): LocalDateTime? {
+        return data?.let { LocalDateTime.parse(it, formatter) } ?: LocalDateTime.now()
     }
 
     @TypeConverters

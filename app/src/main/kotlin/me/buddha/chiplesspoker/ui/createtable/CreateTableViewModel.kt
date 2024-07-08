@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
 import me.buddha.chiplesspoker.domain.navigation.NavigationService
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
+import me.buddha.chiplesspoker.domain.utils.DurationUnit.HANDS
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 import javax.inject.Inject
@@ -110,16 +112,31 @@ class CreateTableViewModel @Inject constructor(
 
     fun startTable() {
         viewModelScope.launch {
-            insertOrReplaceTableUseCase(
+            players = players.sortedBy { it.seatNumber }.toMutableStateList()
+            val id = insertOrReplaceTableUseCase(
                 Table(
                     initialBuyIn = initialBuyInAmount,
                     street = PREFLOP,
-                    blindStructure = blindStructure,
+                    blindStructure = BlindStructure(
+                        durationUnit = HANDS,
+                        blindLevels = listOf(
+                            BlindLevel(
+                                level = 1,
+                                big = 10,
+                                small = 5,
+                                duration = -1
+                            )
+                        )
+                    ),
                     players = players,
-                    currentHand = Hand()
+                    currentHand = Hand(
+                        dealer = players[0].seatNumber,
+                        smallBlindPlayer = players[1].seatNumber,
+                        bigBlindPlayer = players[2].seatNumber,
+                    )
                 )
             )
-            navigationService.navController.navigate(RunningTable(id = 3))
+            navigationService.navController.navigate(RunningTable(id = id))
         }
     }
 }

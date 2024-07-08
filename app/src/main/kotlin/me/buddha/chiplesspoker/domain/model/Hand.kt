@@ -7,9 +7,10 @@ data class Hand(
     val smallBlindPlayer: Int = 1,
     val bigBlindPlayer: Int = 2,
     val decisivePlayer: Int = 2,
-    val currentMaxBet: Long = 0,
-    val pots: List<Pot> = listOf(),
+    var pots: List<Pot> = listOf(),
     val currentPlayer: Int = 3,
+    var currentRound: Round? = null,
+    val endOnBigBlind: Boolean = true,
 )
 
 fun Hand.asEntity() = HandEntity(
@@ -17,7 +18,7 @@ fun Hand.asEntity() = HandEntity(
     smallBlindPlayer = this.smallBlindPlayer,
     bigBlindPlayer = this.bigBlindPlayer,
     decisivePlayer = this.decisivePlayer,
-    currentMaxBet = this.currentMaxBet,
     pots = this.pots.map { it.asEntity() },
-    currentPlayer = currentPlayer
+    currentPlayer = currentPlayer,
+    currentRound = this.currentRound?.asEntity()
 )

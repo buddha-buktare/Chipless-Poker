@@ -16,7 +16,7 @@ class TableRepositoryImpl @Inject constructor(
         return tableDao.getTableById(id)
     }
 
-    override suspend fun insertOrReplaceTable(tableEntity: TableEntity) {
+    override suspend fun insertOrReplaceTable(tableEntity: TableEntity): Long {
         return tableDao.insertOrReplaceTable(tableEntity)
     }
 

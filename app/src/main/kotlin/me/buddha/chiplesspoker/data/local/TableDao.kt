@@ -16,7 +16,7 @@ interface TableDao {
     fun getTableById(id: Long): Flow<TableEntity>
 
     @Upsert
-    suspend fun insertOrReplaceTable(tableEntity: TableEntity)
+    suspend fun insertOrReplaceTable(tableEntity: TableEntity): Long
 
     @Delete
     suspend fun delete(tableEntity: TableEntity)
