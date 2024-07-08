@@ -20,6 +20,7 @@ import me.buddha.chiplesspoker.domain.navigation.NavigationService
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
 import me.buddha.chiplesspoker.domain.utils.DurationUnit.HANDS
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.EMPTY
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 import javax.inject.Inject
@@ -32,7 +33,10 @@ class CreateTableViewModel @Inject constructor(
 
     var initialBuyInAmount by mutableLongStateOf(1000L)
     var blindStructure by mutableStateOf(BlindStructure())
-    var players = mutableStateListOf<Player>()
+    var players = mutableStateListOf<Player>().apply {
+        repeat(6) { add(Player(playingStatus = EMPTY)) }
+    }
+
 
     fun updateInitialBuyIn(buyIn: Long) {
         initialBuyInAmount = buyIn
@@ -99,15 +103,20 @@ class CreateTableViewModel @Inject constructor(
     }
 
     fun addPlayer(index: Int, name: String) {
-        players.add(Player(name = name, seatNumber = index, playingStatus = PLAYING))
+        players[index] = Player(
+            name = name,
+            seatNumber = index,
+            playingStatus = PLAYING,
+            chips = initialBuyInAmount,
+        )
     }
 
     fun updatePlayer(index: Int, name: String) {
-        players.toMutableList().firstOrNull { it.seatNumber == index }?.name = name
+        players[index].name = name
     }
 
     fun removePlayer(index: Int) {
-        players.removeAt(index)
+        players[index] = Player()
     }
 
     fun startTable() {
@@ -129,14 +138,32 @@ class CreateTableViewModel @Inject constructor(
                         )
                     ),
                     players = players,
-                    currentHand = Hand(
-                        dealer = players[0].seatNumber,
-                        smallBlindPlayer = players[1].seatNumber,
-                        bigBlindPlayer = players[2].seatNumber,
-                    )
+                    currentHand = getHandDetails(players.filter { it.seatNumber != -1 }[0].seatNumber)
                 )
             )
             navigationService.navController.navigate(RunningTable(id = id))
         }
+    }
+
+    fun getHandDetails(dealerIndex: Int): Hand {
+        val playingList = players.filter { it.playingStatus == PLAYING }.sortedBy { it.seatNumber }
+        val smallBlindIndex = if (playingList.size == 2) {
+            dealerIndex
+        } else {
+            (dealerIndex + 1) % playingList.size
+        }
+        val bigBlindIndex = if (playingList.size == 2) {
+            (dealerIndex + 1) % playingList.size
+        } else {
+            (dealerIndex + 2) % playingList.size
+        }
+        val currentPlayer = (bigBlindIndex + 1) % playingList.size
+
+        return Hand(
+            dealer = playingList[dealerIndex].seatNumber,
+            smallBlindPlayer = playingList[smallBlindIndex].seatNumber,
+            bigBlindPlayer = playingList[bigBlindIndex].seatNumber,
+            currentPlayer = playingList[currentPlayer].seatNumber
+        )
     }
 }

@@ -122,39 +122,60 @@ fun CreateTableScreen(
         }
         item {
             Text(text = "Players")
-            Button(
-                onClick = {
-                    viewModel.addPlayer(
-                        viewModel.players.size,
-                        "Player ${viewModel.players.size + 1}"
-                    )
-                },
-            ) {
-                Text(text = "Add Player")
+            Row {
+                (0..2).forEach {
+                    Button(
+                        onClick = {
+                            viewModel.addPlayer(
+                                it,
+                                "Player ${it}"
+                            )
+                        },
+                    ) {
+                        Text(text = "Add Player $it")
+                    }
+                }
             }
+            Row {
+                (3..5).forEach {
+                    Button(
+                        onClick = {
+                            viewModel.addPlayer(
+                                it,
+                                "Player ${it}"
+                            )
+                        },
+                    ) {
+                        Text(text = "Add Player $it")
+                    }
+                }
+            }
+
             viewModel.players.forEachIndexed { index, player ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Absolute.SpaceEvenly,
                 ) {
-                    TextField(
-                        value = player.name,
-                        onValueChange = { value ->
-                            if (value.isDigitsOnly()) {
-                                viewModel.updateLevelBigBlind(index, value.toLong())
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number
-                        ),
-                        modifier = Modifier.width(100.dp)
-                    )
-                    Button(
-                        modifier = Modifier.width(100.dp),
-                        onClick = { viewModel.removePlayer(index) }
-                    ) {
-                        Text("Remove")
+                    if (player.seatNumber != -1) {
+                        TextField(
+                            value = player.name,
+                            onValueChange = { value ->
+                                if (value.isDigitsOnly()) {
+                                    viewModel.updateLevelBigBlind(index, value.toLong())
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            modifier = Modifier.width(100.dp)
+                        )
+                        Button(
+                            modifier = Modifier.width(100.dp),
+                            onClick = { viewModel.removePlayer(index) }
+                        ) {
+                            Text("Remove")
+                        }
                     }
                 }
             }
