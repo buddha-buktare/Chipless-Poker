@@ -21,6 +21,7 @@ import me.buddha.chiplesspoker.domain.model.Round
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.FOLDED
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 
 @HiltViewModel(assistedFactory = RunningTableViewModel.RunningTableViewModelFactory::class)
 class RunningTableViewModel @AssistedInject constructor(
@@ -63,7 +64,7 @@ class RunningTableViewModel @AssistedInject constructor(
         }
     }
 
-    fun initiateTable() {
+    private fun initiateTable() {
         currentHand = currentHand?.copy(
             pots = listOf(
                 Pot(
@@ -130,9 +131,16 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     private fun updateCurrentPlayer() {
+        val currentPlayer = currentHand?.currentPlayer
+        val playingList =
+            players.filter { it.playingStatus == PLAYING }.map { it.seatNumber }.sorted()
+
+        val currentIndexInPlayingList = playingList.indexOf(currentPlayer)
+        val newPlayer = playingList[(currentIndexInPlayingList + 1) % playingList.size]
+
         currentHand?.let { hand ->
             currentHand = hand.copy(
-                currentPlayer = (hand.currentPlayer + 1) % players.size
+                currentPlayer = newPlayer
             )
         }
     }
@@ -158,12 +166,13 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     fun onFold() {
-        players = players.mapIndexed { index, it ->
-            if (index == currentPlayerIndex) {
-                it.playingStatus = FOLDED
+        players = players.map { player ->
+            if (player.seatNumber == currentHand?.currentPlayer) {
+                player.playingStatus = FOLDED
             }
-            it
+            player
         }.toMutableList()
+        updateCurrentPlayer()
     }
 
     fun onAllIn() {
