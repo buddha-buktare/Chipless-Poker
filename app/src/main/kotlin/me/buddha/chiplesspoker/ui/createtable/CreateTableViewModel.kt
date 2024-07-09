@@ -182,7 +182,7 @@ class CreateTableViewModel @Inject constructor(
             dealer = playingList[dealerIndex].seatNumber,
             smallBlindPlayer = playingList[smallBlindIndex].seatNumber,
             bigBlindPlayer = playingList[bigBlindIndex].seatNumber,
-            currentPlayer = playingList[currentPlayer].seatNumber
+            currentPlayer = playingList[currentPlayer].seatNumber,
         )
     }
 }

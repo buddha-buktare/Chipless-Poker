@@ -23,14 +23,18 @@ import me.buddha.chiplesspoker.domain.utils.PlayerMove.BB
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.BET
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.CALL
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.CHECK
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.EMPTY
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.FOLD
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.RAISE
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.SB
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.ALL_IN_ACKNOWLEDGED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.FOLDED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
-import me.buddha.chiplesspoker.domain.utils.StreetType
+import me.buddha.chiplesspoker.domain.utils.StreetType.FLOP
 import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
+import me.buddha.chiplesspoker.domain.utils.StreetType.RIVER
+import me.buddha.chiplesspoker.domain.utils.StreetType.TURN
 
 @HiltViewModel(assistedFactory = RunningTableViewModel.RunningTableViewModelFactory::class)
 class RunningTableViewModel @AssistedInject constructor(
@@ -41,7 +45,7 @@ class RunningTableViewModel @AssistedInject constructor(
     var players = mutableListOf<Player>()
     var blindStructure by mutableStateOf(BlindStructure())
     var currentHand by mutableStateOf<Hand?>(Hand())
-    var currentStreet by mutableStateOf<StreetType>(PREFLOP)
+    var currentStreet by mutableStateOf(PREFLOP)
     var isTableStarted by mutableStateOf(false)
     var callAmount by mutableStateOf(0L)
     var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
@@ -71,7 +75,7 @@ class RunningTableViewModel @AssistedInject constructor(
             pots = listOf(
                 Pot(
                     chips = 0,
-                    players = players.map { it.seatNumber },
+                    players = listOf(),
                 )
             ),
             currentRound = Round(
@@ -82,6 +86,7 @@ class RunningTableViewModel @AssistedInject constructor(
                     )
                 },
                 currentMaxBet = blindStructure.blindLevels[blindStructure.currentLevel].big,
+                endsOn = currentHand?.bigBlindPlayer ?: 0
             ),
         )
         if (!isRoundStarted()) {
@@ -106,9 +111,100 @@ class RunningTableViewModel @AssistedInject constructor(
         } ?: false
     }
 
-    fun onRoundEnd() {
-        // todo distribute the chips to winners
-        currentHand?.currentRound?.playersInvestment?.forEach { it.amount = 0 }
+    private fun onRoundEnd() {
+        currentHand?.let { hand ->
+            /**
+             * This list filters the list of all the [ALL-IN] players in the current round.
+             */
+            val allInList = hand.currentRound?.playersInvestment?.filter { it.move == ALL_IN }
+                ?.sortedBy { it.amount }
+
+            allInList?.forEach { playerInvestment ->
+                val playerAmountForAllIn = playerInvestment.amount
+                var amountToTakeOutFromMainPot = 0L
+
+                /**
+                 * Here we iterate over each of the [ALL-IN] elements and
+                 * 1. Add the eligible players for the current pot.
+                 * 2. Create a new pot excluding the current [ALL-IN] player
+                 */
+
+                currentHand = hand.copy(
+                    currentRound = hand.currentRound?.copy(
+                        playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
+                            if (
+                                players.firstOrNull { it.seatNumber == player.playerSeatNo }?.playingStatus == PLAYING ||
+                                players.firstOrNull { it.seatNumber == player.playerSeatNo }?.playingStatus == PlayingStatus.ALL_IN
+                            ) {
+                                if (player.amount >= playerAmountForAllIn) {
+                                    amountToTakeOutFromMainPot += (player.amount - playerAmountForAllIn)
+                                    player.copy(
+                                        amount = player.amount - playerAmountForAllIn,
+                                    )
+                                } else {
+                                    player
+                                }
+                            } else {
+                                player
+                            }
+                        }
+                    )
+                )
+
+                /**
+                 * Finally, we update the pot structure
+                 */
+                currentHand = hand.copy(
+                    pots = hand.pots.mapIndexed { index, pot ->
+                        if (index == hand.pots.size - 1) {
+                            pot.copy(
+                                chips = pot.chips - amountToTakeOutFromMainPot,
+                                players = players.filter { it.playingStatus == PLAYING }
+                                    .map { it.seatNumber }
+                            )
+                        } else {
+                            pot
+                        }
+                    } + Pot(
+                        chips = amountToTakeOutFromMainPot,
+                        players = listOf()
+                    )
+                )
+
+                players = players.map { player ->
+                    if (player.seatNumber == playerInvestment.playerSeatNo) {
+                        player.copy(playingStatus = ALL_IN_ACKNOWLEDGED)
+                    } else {
+                        player
+                    }
+                }.toMutableList()
+
+                currentHand = hand.copy(
+                    previousBet = 0,
+                    currentPlayer = hand.smallBlindPlayer,
+                    currentRound = hand.currentRound?.copy(
+                        currentMaxBet = 0,
+                        endsOn = hand.smallBlindPlayer,
+                        playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
+                            player.copy(
+                                move = EMPTY,
+                                amount = 0,
+                            )
+                        }
+                    ),
+                )
+            }
+            when (currentStreet) {
+                PREFLOP -> currentStreet = FLOP
+                FLOP -> currentStreet = TURN
+                TURN -> currentStreet = RIVER
+                RIVER -> onHandEnd()
+            }
+        }
+    }
+
+    private fun onHandEnd() {
+
     }
 
     private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
@@ -154,7 +250,28 @@ class RunningTableViewModel @AssistedInject constructor(
                 currentPlayer = newPlayer
             )
         }
+        currentPlayer?.let {
+            checkForRoundEnd(currentPlayer, newPlayer)
+        }
         getActionsForCurrentPlayer()
+    }
+
+    private fun checkForRoundEnd(oldPlayer: Int, newPlayer: Int) {
+        currentHand?.let { hand ->
+            if (hand.endOnBigBlind) {
+                if (oldPlayer == hand.bigBlindPlayer) {
+                    val oldPlayerMove =
+                        hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == oldPlayer }?.move
+                    if (oldPlayerMove == CHECK || oldPlayerMove == FOLD) {
+                        onRoundEnd()
+                    }
+                }
+            } else {
+                if (newPlayer == hand.currentRound?.endsOn) {
+                    onRoundEnd()
+                }
+            }
+        }
     }
 
     private fun getActionsForCurrentPlayer() {
@@ -225,8 +342,10 @@ class RunningTableViewModel @AssistedInject constructor(
             currentHand = hand.copy(
                 previousBet = amount,
                 currentRound = hand.currentRound?.copy(
-                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount
-                )
+                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount,
+                    endsOn = hand.currentPlayer,
+                ),
+                endOnBigBlind = false
             )
             updateCurrentPlayer()
         }
@@ -249,8 +368,10 @@ class RunningTableViewModel @AssistedInject constructor(
             currentHand = hand.copy(
                 previousBet = amount,
                 currentRound = hand.currentRound?.copy(
-                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount
-                )
+                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount,
+                    endsOn = hand.currentPlayer,
+                ),
+                endOnBigBlind = false
             )
             updateCurrentPlayer()
         }
