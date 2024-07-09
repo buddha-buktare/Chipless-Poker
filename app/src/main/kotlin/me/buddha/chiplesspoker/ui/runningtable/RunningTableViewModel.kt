@@ -26,6 +26,7 @@ import me.buddha.chiplesspoker.domain.utils.PlayerMove.CHECK
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.FOLD
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.RAISE
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.SB
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.FOLDED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 import me.buddha.chiplesspoker.domain.utils.StreetType
@@ -158,12 +159,12 @@ class RunningTableViewModel @AssistedInject constructor(
 
     private fun getActionsForCurrentPlayer() {
         currentHand?.let { hand ->
-            val currentPlayer = hand.currentPlayer
             val currentMaxBet = hand.currentRound?.currentMaxBet ?: 0
             val investedAmount =
                 hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
                     ?: 0
-            val playerAmount = players.firstOrNull { it.seatNumber == currentPlayer }?.chips ?: 0
+            val playerAmount =
+                players.firstOrNull { it.seatNumber == hand.currentPlayer }?.chips ?: 0
 
             val actions = mutableListOf<PlayerMove>()
 
@@ -273,6 +274,28 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     fun onAllIn() {
+        currentHand?.let { hand ->
+            val investedAmount =
+                hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
+                    ?: 0
+
+            val playerAmount =
+                players.firstOrNull { it.seatNumber == hand.currentPlayer }?.chips ?: 0
+
+            updatePlayerInvestment(
+                seatNumber = hand.currentPlayer,
+                chips = playerAmount - investedAmount,
+                move = ALL_IN
+            )
+
+            players = players.map { player ->
+                if (player.seatNumber == hand.currentPlayer) {
+                    player.playingStatus = PlayingStatus.ALL_IN
+                }
+                player
+            }.toMutableList()
+            updateCurrentPlayer()
+        }
     }
 
     /**
