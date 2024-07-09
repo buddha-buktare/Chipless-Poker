@@ -3,6 +3,7 @@ package me.buddha.chiplesspoker.data.model
 import me.buddha.chiplesspoker.domain.model.Hand
 
 data class HandEntity(
+    val index: Int,
     val dealer: Int,
     val smallBlindPlayer: Int,
     val bigBlindPlayer: Int,
@@ -14,6 +15,7 @@ data class HandEntity(
 )
 
 fun HandEntity.asExternalModel() = Hand(
+    index = this.index,
     dealer = this.dealer,
     smallBlindPlayer = this.smallBlindPlayer,
     bigBlindPlayer = this.bigBlindPlayer,

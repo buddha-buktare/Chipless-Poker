@@ -8,7 +8,7 @@ data class BlindStructureEntity(
     val blindLevels: List<BlindLevelEntity>,
     val remainingHands: Long = 0,
     val remainingTime: Long = 0,
-    val currentLevel: Long = 0,
+    val currentLevel: Int = 0,
 )
 
 fun BlindStructureEntity.asExternalModel() = BlindStructure(
