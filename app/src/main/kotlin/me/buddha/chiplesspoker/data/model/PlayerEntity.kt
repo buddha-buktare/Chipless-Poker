@@ -8,6 +8,7 @@ data class PlayerEntity(
     val seatNumber: Int,
     val chips: Long,
     val isDealer: Boolean = false,
+    val isExited: Boolean = false,
     val playingStatus: PlayingStatus,
 )
 
@@ -16,5 +17,6 @@ fun PlayerEntity.asExternalModel() = Player (
     seatNumber = this.seatNumber,
     chips = this.chips,
     isDealer = this.isDealer,
+    isExited = this.isExited,
     playingStatus = this.playingStatus,
 )

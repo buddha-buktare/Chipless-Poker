@@ -1,11 +1,20 @@
 package me.buddha.chiplesspoker.ui.runningtable
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.core.text.isDigitsOnly
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.ALL_IN
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.BET
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.CALL
@@ -15,7 +24,6 @@ import me.buddha.chiplesspoker.domain.utils.PlayerMove.RAISE
 
 @Composable
 fun RunningTableScreen(
-    modifier: Modifier = Modifier,
     viewModel: RunningTableViewModel
 ) {
     Column(
@@ -55,10 +63,36 @@ fun RunningTableScreen(
             Button(onClick = viewModel::onFold) { Text("Fold") }
         }
         if (viewModel.actionsForCurrentPlayer.contains(BET)) {
-            Button(onClick = { viewModel.onBet(35) }) { Text("Bet") }
+            Row {
+                var betValue by remember { mutableStateOf("") }
+                Text("Min: ${viewModel.blindStructure.blindLevels[viewModel.blindStructure.currentLevel].big}")
+                TextField(
+                    value = betValue,
+                    onValueChange = {
+                        if (it.isDigitsOnly()) {
+                            betValue = it
+                        }
+                    },
+                    modifier = Modifier.width(150.dp)
+                )
+                Button(onClick = { viewModel.onBet(betValue.toLong()) }) { Text("Bet") }
+            }
         }
         if (viewModel.actionsForCurrentPlayer.contains(RAISE)) {
-            Button(onClick = { viewModel.onRaise(35) }) { Text("Raise") }
+            Row {
+                var raiseValue by remember { mutableStateOf("") }
+                Text("Min: ${viewModel.currentHand?.previousBet}")
+                TextField(
+                    value = raiseValue,
+                    onValueChange = {
+                        if (it.isDigitsOnly()) {
+                            raiseValue = it
+                        }
+                    },
+                    modifier = Modifier.width(150.dp)
+                )
+                Button(onClick = { viewModel.onRaise(raiseValue.toLong()) }) { Text("Raise") }
+            }
         }
         if (viewModel.actionsForCurrentPlayer.contains(ALL_IN)) {
             Button(onClick = viewModel::onAllIn) { Text("AllIn") }

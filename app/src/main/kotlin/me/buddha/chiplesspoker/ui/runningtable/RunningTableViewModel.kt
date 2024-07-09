@@ -1,8 +1,6 @@
 package me.buddha.chiplesspoker.ui.runningtable
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -19,7 +17,6 @@ import me.buddha.chiplesspoker.domain.model.PlayerInvestment
 import me.buddha.chiplesspoker.domain.model.Pot
 import me.buddha.chiplesspoker.domain.model.Round
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
-import me.buddha.chiplesspoker.domain.utils.DurationUnit
 import me.buddha.chiplesspoker.domain.utils.PlayerMove
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.ALL_IN
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.BB
@@ -40,23 +37,13 @@ class RunningTableViewModel @AssistedInject constructor(
     private val getTableByIdUseCase: GetTableByIdUseCase,
 ) : ViewModel() {
 
-    var remainingTime by mutableIntStateOf(0)
-    var remainingHands by mutableIntStateOf(0)
-    var durationUnit by mutableStateOf(DurationUnit.HANDS)
-    var tableId by mutableLongStateOf(id)
-    var currentBiggestHand by mutableLongStateOf(0)
-    var currentPlayerIndex by mutableIntStateOf(0)
-    var nextPlayerIndex by mutableIntStateOf(0)
-    var pots = mutableListOf<Pot>()
     var players = mutableListOf<Player>()
     var blindStructure by mutableStateOf(BlindStructure())
     var currentHand by mutableStateOf<Hand?>(Hand())
-    var currentRound by mutableStateOf<Round?>(Round())
     var currentStreet by mutableStateOf<StreetType>(PREFLOP)
     var isTableStarted by mutableStateOf(false)
     var callAmount by mutableStateOf(0L)
     var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
-    var rounds = mutableListOf<Round?>(null)
 
     init {
         getTableDetails(id)
@@ -65,11 +52,9 @@ class RunningTableViewModel @AssistedInject constructor(
     private fun getTableDetails(id: Long) {
         viewModelScope.launch {
             getTableByIdUseCase(id).collect { table ->
-                durationUnit = table.blindStructure.durationUnit
                 players = table.players.toMutableList()
                 blindStructure = table.blindStructure
                 currentHand = table.currentHand
-                currentRound = table.currentHand?.currentRound
                 currentStreet = table.street
                 isTableStarted = table.isTableStarted
                 if (!isTableStarted) {
@@ -236,16 +221,35 @@ class RunningTableViewModel @AssistedInject constructor(
                 chips = amount,
                 move = BET
             )
+            currentHand = hand.copy(
+                previousBet = amount,
+                currentRound = hand.currentRound?.copy(
+                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount
+                )
+            )
             updateCurrentPlayer()
         }
     }
 
     fun onRaise(amount: Long) {
         currentHand?.let { hand ->
+            val currentMaxBet = hand.currentRound?.currentMaxBet ?: 0
+            val investedAmount =
+                hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
+                    ?: 0
+
+            callAmount = currentMaxBet - investedAmount
+
             updatePlayerInvestment(
                 seatNumber = hand.currentPlayer,
-                chips = amount,
+                chips = callAmount + amount,
                 move = RAISE
+            )
+            currentHand = hand.copy(
+                previousBet = amount,
+                currentRound = hand.currentRound?.copy(
+                    currentMaxBet = (hand.currentRound?.currentMaxBet ?: 0) + amount
+                )
             )
             updateCurrentPlayer()
         }

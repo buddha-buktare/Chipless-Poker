@@ -9,6 +9,7 @@ data class Player(
     val seatNumber: Int = -1,
     var chips: Long = 0,
     val isDealer: Boolean = false,
+    val isExited: Boolean = false,
     var playingStatus: PlayingStatus = PLAYING,
 )
 
@@ -17,5 +18,6 @@ fun Player.asEntity() = PlayerEntity (
     seatNumber = this.seatNumber,
     chips = this.chips,
     isDealer = this.isDealer,
+    isExited = this.isExited,
     playingStatus = this.playingStatus,
 )
