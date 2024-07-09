@@ -9,6 +9,7 @@ import me.buddha.chiplesspoker.data.model.HandEntity
 import me.buddha.chiplesspoker.data.model.PlayerEntity
 import me.buddha.chiplesspoker.data.model.PotEntity
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
+import me.buddha.chiplesspoker.domain.utils.PlayerMove
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus
 import me.buddha.chiplesspoker.domain.utils.StreetType
 import java.time.LocalDateTime
@@ -101,5 +102,15 @@ class Converters {
     @TypeConverter
     fun toPlayingStatus(data: String): PlayingStatus {
         return PlayingStatus.valueOf(data)
+    }
+
+    @TypeConverters
+    fun fromPlayerMove(move: PlayerMove): String {
+        return move.name
+    }
+
+    @TypeConverter
+    fun toPlayerMove(data: String): PlayerMove {
+        return PlayerMove.valueOf(data)
     }
 }

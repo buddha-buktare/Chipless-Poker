@@ -19,7 +19,6 @@ import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
 import me.buddha.chiplesspoker.domain.navigation.NavigationService
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
-import me.buddha.chiplesspoker.domain.utils.DurationUnit.HANDS
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.EMPTY
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
@@ -56,8 +55,26 @@ class CreateTableViewModel @Inject constructor(
             duration = -1,
         )
         blindStructure = blindStructure.copy(
-            blindLevels = blindStructure.blindLevels + newLevel
+            blindLevels = blindStructure.blindLevels.mapIndexed { index, level ->
+                if (index == (blindStructure.blindLevels.size - 1)) {
+                    if (level.duration == -1L) {
+                        level.copy(duration = 30)
+                    } else {
+                        level
+                    }
+                } else {
+                    level
+                }
+            }
         )
+        blindStructure = blindStructure.copy(
+            blindLevels = blindStructure.blindLevels + newLevel,
+        )
+
+        blindStructure = blindStructure.copy(
+            remainingHands = blindStructure.blindLevels[0].duration - 1,
+        )
+
     }
 
     fun updateLevelBigBlind(levelIndex: Int, bigBlind: Long) {
@@ -100,6 +117,18 @@ class CreateTableViewModel @Inject constructor(
         blindStructure = blindStructure.copy(
             blindLevels = blindStructure.blindLevels.filterIndexed { index, _ -> index != levelIndex }
         )
+        blindStructure = blindStructure.copy(
+            blindLevels = blindStructure.blindLevels.mapIndexed { index, level ->
+                if (index == (blindStructure.blindLevels.size - 1)) {
+                    level.copy(duration = -1L)
+                } else {
+                    level
+                }
+            }
+        )
+        blindStructure = blindStructure.copy(
+            remainingHands = blindStructure.blindLevels[0].duration - 1,
+        )
     }
 
     fun addPlayer(index: Int, name: String) {
@@ -126,17 +155,7 @@ class CreateTableViewModel @Inject constructor(
                 Table(
                     initialBuyIn = initialBuyInAmount,
                     street = PREFLOP,
-                    blindStructure = BlindStructure(
-                        durationUnit = HANDS,
-                        blindLevels = listOf(
-                            BlindLevel(
-                                level = 1,
-                                big = 10,
-                                small = 5,
-                                duration = -1
-                            )
-                        )
-                    ),
+                    blindStructure = blindStructure,
                     players = players,
                     currentHand = getHandDetails(players.filter { it.seatNumber != -1 }[0].seatNumber)
                 )

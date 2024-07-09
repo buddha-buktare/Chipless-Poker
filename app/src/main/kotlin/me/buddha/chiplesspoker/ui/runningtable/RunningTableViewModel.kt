@@ -20,8 +20,19 @@ import me.buddha.chiplesspoker.domain.model.Pot
 import me.buddha.chiplesspoker.domain.model.Round
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
+import me.buddha.chiplesspoker.domain.utils.PlayerMove
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.ALL_IN
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.BB
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.BET
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.CALL
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.CHECK
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.FOLD
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.RAISE
+import me.buddha.chiplesspoker.domain.utils.PlayerMove.SB
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.FOLDED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
+import me.buddha.chiplesspoker.domain.utils.StreetType
+import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 
 @HiltViewModel(assistedFactory = RunningTableViewModel.RunningTableViewModelFactory::class)
 class RunningTableViewModel @AssistedInject constructor(
@@ -41,7 +52,10 @@ class RunningTableViewModel @AssistedInject constructor(
     var blindStructure by mutableStateOf(BlindStructure())
     var currentHand by mutableStateOf<Hand?>(Hand())
     var currentRound by mutableStateOf<Round?>(Round())
+    var currentStreet by mutableStateOf<StreetType>(PREFLOP)
     var isTableStarted by mutableStateOf(false)
+    var callAmount by mutableStateOf(0L)
+    var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
     var rounds = mutableListOf<Round?>(null)
 
     init {
@@ -56,10 +70,12 @@ class RunningTableViewModel @AssistedInject constructor(
                 blindStructure = table.blindStructure
                 currentHand = table.currentHand
                 currentRound = table.currentHand?.currentRound
+                currentStreet = table.street
                 isTableStarted = table.isTableStarted
                 if (!isTableStarted) {
                     initiateTable()
                 }
+                getActionsForCurrentPlayer()
             }
         }
     }
@@ -79,13 +95,21 @@ class RunningTableViewModel @AssistedInject constructor(
                         amount = 0
                     )
                 },
-                currentMaxBet = blindStructure.blindLevels[0].big
-            )
+                currentMaxBet = blindStructure.blindLevels[blindStructure.currentLevel].big,
+            ),
         )
         if (!isRoundStarted()) {
             currentHand?.let { hand ->
-                updatePlayerInvestment(hand.smallBlindPlayer, 5)
-                updatePlayerInvestment(hand.bigBlindPlayer, 10)
+                updatePlayerInvestment(
+                    seatNumber = hand.smallBlindPlayer,
+                    chips = blindStructure.blindLevels[blindStructure.currentLevel].small,
+                    move = SB
+                )
+                updatePlayerInvestment(
+                    seatNumber = hand.bigBlindPlayer,
+                    chips = blindStructure.blindLevels[blindStructure.currentLevel].big,
+                    move = BB
+                )
             }
         }
     }
@@ -101,7 +125,7 @@ class RunningTableViewModel @AssistedInject constructor(
         currentHand?.currentRound?.playersInvestment?.forEach { it.amount = 0 }
     }
 
-    private fun updatePlayerInvestment(seatNumber: Int, chips: Long) {
+    private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
         players = players.map {
             if (it.seatNumber == seatNumber) {
                 it.chips -= chips
@@ -121,6 +145,7 @@ class RunningTableViewModel @AssistedInject constructor(
                     playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
                         if (seatNumber == player.playerSeatNo) {
                             player.amount += chips
+                            player.move = move
                         }
                         player
                     } ?: listOf(),
@@ -143,26 +168,87 @@ class RunningTableViewModel @AssistedInject constructor(
                 currentPlayer = newPlayer
             )
         }
+        getActionsForCurrentPlayer()
+    }
+
+    private fun getActionsForCurrentPlayer() {
+        currentHand?.let { hand ->
+            val currentPlayer = hand.currentPlayer
+            val currentMaxBet = hand.currentRound?.currentMaxBet ?: 0
+            val investedAmount =
+                hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
+                    ?: 0
+            val playerAmount = players.firstOrNull { it.seatNumber == currentPlayer }?.chips ?: 0
+
+            val actions = mutableListOf<PlayerMove>()
+
+            callAmount = currentMaxBet - investedAmount
+
+            if (callAmount == 0L) {
+                actions.add(CHECK)
+                actions.add(BET)
+            } else {
+                if (currentMaxBet >= (playerAmount - investedAmount)) {
+                    actions.add(ALL_IN)
+                } else {
+                    actions.add(CALL)
+                    actions.add(RAISE)
+                }
+            }
+            actions.add(FOLD)
+            actionsForCurrentPlayer.clear()
+            actionsForCurrentPlayer = actions.toMutableList()
+        }
     }
 
     fun onCheck() {
-        updateCurrentPlayer()
-    }
-
-    fun onCall() {
         currentHand?.let { hand ->
             updatePlayerInvestment(
                 seatNumber = hand.currentPlayer,
-                chips = hand.currentRound?.currentMaxBet ?: 0
+                chips = 0,
+                move = CHECK
             )
             updateCurrentPlayer()
         }
     }
 
-    fun onBet() {
+    fun onCall() {
+        currentHand?.let { hand ->
+            val investedAmount =
+                hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
+                    ?: 0
+
+            hand.currentRound?.currentMaxBet?.let { callAmount ->
+                updatePlayerInvestment(
+                    seatNumber = hand.currentPlayer,
+                    chips = (callAmount - investedAmount),
+                    move = CALL
+                )
+            }
+            updateCurrentPlayer()
+        }
     }
 
-    fun onRaise() {
+    fun onBet(amount: Long) {
+        currentHand?.let { hand ->
+            updatePlayerInvestment(
+                seatNumber = hand.currentPlayer,
+                chips = amount,
+                move = BET
+            )
+            updateCurrentPlayer()
+        }
+    }
+
+    fun onRaise(amount: Long) {
+        currentHand?.let { hand ->
+            updatePlayerInvestment(
+                seatNumber = hand.currentPlayer,
+                chips = amount,
+                move = RAISE
+            )
+            updateCurrentPlayer()
+        }
     }
 
     fun onFold() {
@@ -172,14 +258,25 @@ class RunningTableViewModel @AssistedInject constructor(
             }
             player
         }.toMutableList()
+        currentHand?.let { hand ->
+            updatePlayerInvestment(
+                seatNumber = hand.currentPlayer,
+                chips = 0,
+                move = FOLD
+            )
+        }
         updateCurrentPlayer()
     }
 
     fun onAllIn() {
     }
 
+    /**
+     * Takes the Id of the table as a parameter for opening the specific table
+     */
     @AssistedFactory
     interface RunningTableViewModelFactory {
         fun create(id: Long): RunningTableViewModel
     }
 }
+
