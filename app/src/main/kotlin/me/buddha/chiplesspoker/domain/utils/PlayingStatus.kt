@@ -5,5 +5,6 @@ enum class PlayingStatus {
     FOLDED,
     WAITING,
     ALL_IN,
+    ALL_IN_ACKNOWLEDGED,
     EMPTY
 }
