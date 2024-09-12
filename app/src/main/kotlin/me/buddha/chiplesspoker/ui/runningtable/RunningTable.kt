@@ -59,6 +59,7 @@ fun RunningTableScreen(
         }
 
         Text("Current Player -> ${viewModel.currentHand?.currentPlayer}")
+        Text("Ends On -> ${viewModel.currentHand?.currentRound?.endsOn}")
         if (viewModel.actionsForCurrentPlayer.contains(CALL)) {
             Button(onClick = viewModel::onCall) { Text("Call ${viewModel.callAmount}") }
         }
@@ -128,6 +129,8 @@ fun RunningTableScreen(
                     Text("$it")
                 }
             }
+            Button(onClick = viewModel::onDistribute) { Text("Distribute") }
+
         }
 
     }

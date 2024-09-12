@@ -31,6 +31,7 @@ import me.buddha.chiplesspoker.domain.utils.PlayingStatus
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.ALL_IN_ACKNOWLEDGED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.FOLDED
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
+import me.buddha.chiplesspoker.domain.utils.PlayingStatus.WAITING
 import me.buddha.chiplesspoker.domain.utils.StreetType.FLOP
 import me.buddha.chiplesspoker.domain.utils.StreetType.PREFLOP
 import me.buddha.chiplesspoker.domain.utils.StreetType.RIVER
@@ -49,7 +50,7 @@ class RunningTableViewModel @AssistedInject constructor(
     var isTableStarted by mutableStateOf(false)
     var callAmount by mutableStateOf(0L)
     var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
-    var winners = mutableListOf<MutableList<Int>>(listOf<Int>().toMutableList())
+    var winners = mutableListOf<MutableList<Int>>(mutableListOf<Int>())
 
     var showPotDetails by mutableStateOf(false)
 
@@ -190,6 +191,7 @@ class RunningTableViewModel @AssistedInject constructor(
                         )
                     }
                 ),
+                endOnBigBlind = false
             )
 
             if (players.filter { it.playingStatus == PLAYING }.size <= 1) {
@@ -244,7 +246,61 @@ class RunningTableViewModel @AssistedInject constructor(
 
     private fun onHandEnd() {
         showPotDetails = true
+        winners.clear()
+        currentHand?.pots?.forEach { _ ->
+            winners.add(mutableListOf())
+        }
+    }
 
+    fun onDistribute() {
+        currentHand?.let { hand ->
+            val distributionOrder = mutableListOf<Int>()
+            players.filter { it.playingStatus != PlayingStatus.EMPTY || it.playingStatus != WAITING }
+                .forEach { player ->
+                    if (player.seatNumber >= hand.dealer) {
+                        distributionOrder.add(player.seatNumber)
+                    }
+                }
+            players.filter { it.playingStatus != PlayingStatus.EMPTY || it.playingStatus != WAITING }
+                .forEach { player ->
+                    if (player.seatNumber < hand.dealer) {
+                        distributionOrder.add(player.seatNumber)
+                    }
+                }
+
+            hand.pots.forEachIndexed { index, pot ->
+                val chipsPerPerson = pot.chips / pot.players.size
+                var extraChips = pot.chips % pot.players.size
+
+                winners[index].forEach { winner ->
+                    players = players.map { player ->
+                        if (player.seatNumber == winner) {
+                            player.copy(
+                                chips = player.chips + chipsPerPerson
+                            )
+                        }
+                        player
+                    }.toMutableList()
+                }
+
+                var distributionOrderIndex = 0
+                while (extraChips > 0 && distributionOrderIndex < distributionOrder.size) {
+                    winners[index].firstOrNull { it == distributionOrder[distributionOrderIndex] }
+                        ?.let {
+                            players = players.map { player ->
+                                if (player.seatNumber == distributionOrder[distributionOrderIndex]) {
+                                    player.copy(
+                                        chips = player.chips + 1
+                                    )
+                                }
+                                player
+                            }.toMutableList()
+                            extraChips--
+                        }
+                    distributionOrderIndex++
+                }
+            }
+        }
     }
 
     private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
@@ -453,6 +509,13 @@ class RunningTableViewModel @AssistedInject constructor(
 
     fun onFold() {
         val foldedPlayer = currentHand?.currentPlayer
+        foldedPlayer?.let {
+            updatePlayerInvestment(
+                seatNumber = it,
+                chips = 0,
+                move = FOLD
+            )
+        }
         updateCurrentPlayer()
         players = players.map { player ->
             if (player.seatNumber == foldedPlayer) {
@@ -461,13 +524,11 @@ class RunningTableViewModel @AssistedInject constructor(
             player
         }.toMutableList()
 
-        foldedPlayer?.let {
-            updatePlayerInvestment(
-                seatNumber = it,
-                chips = 0,
-                move = FOLD
-            )
-        }
+        players.firstOrNull { it.seatNumber == foldedPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
+            ?.let {
+                updateEndsOn()
+            }
+
 
         currentHand?.let { hand ->
             currentHand = hand.copy(
@@ -506,20 +567,16 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     fun onAddWinner(potIndex: Int, player: Int) {
-        if (potIndex <= winners.size) {
-            winners.toMutableList().add(listOf<Int>().toMutableList())
-        }
 
-        winners = winners.mapIndexed { index, winner ->
-            if (index == potIndex) {
-                if (winners[potIndex].contains(player)) {
-                    winner.toMutableList().remove(player)
-                } else {
-                    winner.toMutableList().add(player)
-                }
+        if (winners[potIndex].contains(player)) {
+            winners[potIndex].apply {
+                remove(player)
             }
-            winner
-        }.toMutableList()
+        } else {
+            winners[potIndex].apply {
+                add(player)
+            }
+        }
     }
 
     /**
