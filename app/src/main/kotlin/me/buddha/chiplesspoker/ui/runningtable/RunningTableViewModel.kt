@@ -67,14 +67,14 @@ class RunningTableViewModel @AssistedInject constructor(
                 currentStreet = table.street
                 isTableStarted = table.isTableStarted
                 if (!isTableStarted) {
-                    initiateTable()
+                    initiateNewHand()
                 }
                 getActionsForCurrentPlayer()
             }
         }
     }
 
-    private fun initiateTable() {
+    private fun initiateNewHand() {
         currentHand = currentHand?.copy(
             pots = listOf(
                 Pot(
@@ -227,6 +227,52 @@ class RunningTableViewModel @AssistedInject constructor(
         }
     }
 
+    private fun clearHandData() {
+        players = players.map { player ->
+            if (player.playingStatus != PlayingStatus.EMPTY) {
+                player.copy(playingStatus = PLAYING)
+            } else {
+                player
+            }
+        }.toMutableList()
+        currentStreet = PREFLOP
+
+        currentHand?.let { hand ->
+            val playersSorted =
+                players.filter { it.seatNumber != -1 && it.playingStatus == PLAYING }
+                    .map { it.seatNumber }.sorted()
+            val nextDealer = playersSorted.firstOrNull { it > hand.dealer } ?: playersSorted[0]
+            val indexOfNextDealerInSortedList = playersSorted.indexOf(nextDealer)
+            val nextSB: Int
+            val nextBB: Int
+            val currentPlayer: Int
+
+            if (playersSorted.size == 2) {
+                nextSB = playersSorted[indexOfNextDealerInSortedList]
+                nextBB = playersSorted[(indexOfNextDealerInSortedList + 1) % playersSorted.size]
+                currentPlayer =
+                    playersSorted[(indexOfNextDealerInSortedList + 2) % playersSorted.size]
+            } else {
+                nextSB = playersSorted[(indexOfNextDealerInSortedList + 1) % playersSorted.size]
+                nextBB = playersSorted[(indexOfNextDealerInSortedList + 2) % playersSorted.size]
+                currentPlayer =
+                    playersSorted[(indexOfNextDealerInSortedList + 3) % playersSorted.size]
+            }
+
+            currentHand = hand.copy(
+                index = hand.index + 1,
+                dealer = nextDealer,
+                smallBlindPlayer = nextSB,
+                bigBlindPlayer = nextBB,
+                previousBet = 0,
+                currentPlayer = currentPlayer,
+                pots = listOf(),
+                endOnBigBlind = true
+            )
+        }
+        initiateNewHand()
+    }
+
     private fun getEndsOnPlayer(): Int {
         return currentHand?.smallBlindPlayer?.let { smallBlindPlayer ->
             val playingList =
@@ -269,38 +315,24 @@ class RunningTableViewModel @AssistedInject constructor(
                 }
 
             hand.pots.forEachIndexed { index, pot ->
-                val chipsPerPerson = pot.chips / pot.players.size
-                var extraChips = pot.chips % pot.players.size
-
+                val chipsPerPerson = pot.chips / winners[index].size
+                var extraChips = pot.chips % winners[index].size
                 winners[index].forEach { winner ->
-                    players = players.map { player ->
-                        if (player.seatNumber == winner) {
-                            player.copy(
-                                chips = player.chips + chipsPerPerson
-                            )
-                        }
-                        player
-                    }.toMutableList()
+                    distributeWinningToPlayer(winner, chipsPerPerson)
                 }
 
                 var distributionOrderIndex = 0
                 while (extraChips > 0 && distributionOrderIndex < distributionOrder.size) {
                     winners[index].firstOrNull { it == distributionOrder[distributionOrderIndex] }
                         ?.let {
-                            players = players.map { player ->
-                                if (player.seatNumber == distributionOrder[distributionOrderIndex]) {
-                                    player.copy(
-                                        chips = player.chips + 1
-                                    )
-                                }
-                                player
-                            }.toMutableList()
+                            distributeWinningToPlayer(distributionOrder[distributionOrderIndex], 1)
                             extraChips--
                         }
                     distributionOrderIndex++
                 }
             }
         }
+        clearHandData()
     }
 
     private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
@@ -334,6 +366,29 @@ class RunningTableViewModel @AssistedInject constructor(
                 )
             )
         }
+    }
+
+    private fun distributeWinningToPlayer(seatNumber: Int, chips: Long) {
+        players = players.map { player ->
+            if (player.seatNumber == seatNumber) {
+                player.copy(chips = player.chips + chips)
+            } else {
+                player
+            }
+        }.toMutableList()
+
+        // currentHand?.let { hand ->
+        //     currentHand = hand.copy(
+        //         currentRound = hand.currentRound?.copy(
+        //             playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
+        //                 if (seatNumber == player.playerSeatNo) {
+        //                     player.amount += chips
+        //                 }
+        //                 player
+        //             } ?: listOf(),
+        //         )
+        //     )
+        // }
     }
 
     private fun updateCurrentPlayer() {
