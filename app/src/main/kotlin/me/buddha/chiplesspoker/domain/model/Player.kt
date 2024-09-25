@@ -6,7 +6,7 @@ import me.buddha.chiplesspoker.domain.utils.PlayingStatus.PLAYING
 
 data class Player(
     var name: String = "Player",
-    val seatNumber: Int = -1,
+    var seatNumber: Int = -1,
     var chips: Long = 0,
     val isDealer: Boolean = false,
     val isExited: Boolean = false,

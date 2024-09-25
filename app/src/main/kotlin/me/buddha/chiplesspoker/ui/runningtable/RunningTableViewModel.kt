@@ -49,6 +49,7 @@ class RunningTableViewModel @AssistedInject constructor(
     var currentStreet by mutableStateOf(PREFLOP)
     var isTableStarted by mutableStateOf(false)
     var callAmount by mutableStateOf(0L)
+    var currentPlayerMaxLimit by mutableStateOf(0L)
     var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
     var winners = mutableListOf<MutableList<Int>>(mutableListOf<Int>())
 
@@ -106,8 +107,10 @@ class RunningTableViewModel @AssistedInject constructor(
                     move = BB
             )
         }
+        getActionsForCurrentPlayer()
 
         isTableStarted = true
+        showPotDetails = false
     }
 
     private fun onRoundEnd() {
@@ -235,6 +238,15 @@ class RunningTableViewModel @AssistedInject constructor(
                 player
             }
         }.toMutableList()
+
+        players = players.map { player ->
+            if (player.chips == 0L) {
+                player.playingStatus = PlayingStatus.EMPTY
+                player.seatNumber = -1
+            }
+            player
+        }.toMutableList()
+
         currentStreet = PREFLOP
 
         currentHand?.let { hand ->
@@ -296,6 +308,7 @@ class RunningTableViewModel @AssistedInject constructor(
         currentHand?.pots?.forEach { _ ->
             winners.add(mutableListOf())
         }
+        // onDistribute()
     }
 
     fun onDistribute() {
@@ -315,20 +328,27 @@ class RunningTableViewModel @AssistedInject constructor(
                 }
 
             hand.pots.forEachIndexed { index, pot ->
-                val chipsPerPerson = pot.chips / winners[index].size
-                var extraChips = pot.chips % winners[index].size
-                winners[index].forEach { winner ->
-                    distributeWinningToPlayer(winner, chipsPerPerson)
-                }
+                if (pot.players.size == 1) {
+                    distributeWinningToPlayer(pot.players[0], pot.chips)
+                } else {
+                    val chipsPerPerson = pot.chips / winners[index].size
+                    var extraChips = pot.chips % winners[index].size
+                    winners[index].forEach { winner ->
+                        distributeWinningToPlayer(winner, chipsPerPerson)
+                    }
 
-                var distributionOrderIndex = 0
-                while (extraChips > 0 && distributionOrderIndex < distributionOrder.size) {
-                    winners[index].firstOrNull { it == distributionOrder[distributionOrderIndex] }
-                        ?.let {
-                            distributeWinningToPlayer(distributionOrder[distributionOrderIndex], 1)
-                            extraChips--
-                        }
-                    distributionOrderIndex++
+                    var distributionOrderIndex = 0
+                    while (extraChips > 0 && distributionOrderIndex < distributionOrder.size) {
+                        winners[index].firstOrNull { it == distributionOrder[distributionOrderIndex] }
+                            ?.let {
+                                distributeWinningToPlayer(
+                                    distributionOrder[distributionOrderIndex],
+                                    1
+                                )
+                                extraChips--
+                            }
+                        distributionOrderIndex++
+                    }
                 }
             }
         }
@@ -336,9 +356,19 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
+        var chipsActuallyPlayed = chips
+        var moveActuallyPlayed = move
+
         players = players.map { player ->
             if (player.seatNumber == seatNumber) {
-                player.chips -= chips
+                if (chips != 0L && player.chips <= chips) {
+                    chipsActuallyPlayed = player.chips
+                    moveActuallyPlayed = ALL_IN
+                    player.playingStatus = PlayingStatus.ALL_IN
+                    player.chips = 0
+                } else {
+                    player.chips -= chips
+                }
             }
             player
         }.toMutableList()
@@ -347,8 +377,8 @@ class RunningTableViewModel @AssistedInject constructor(
             currentHand = hand.copy(
                 pots = hand.pots.mapIndexed { index, pot ->
                     if (index == (currentHand?.pots?.size?.minus(1) ?: Long.MAX_VALUE)) {
-                        pot.chips += chips
-                        if (move == FOLD) {
+                        pot.chips += chipsActuallyPlayed
+                        if (moveActuallyPlayed == FOLD) {
                             pot.players.toMutableList().remove(seatNumber)
                         }
                     }
@@ -357,8 +387,8 @@ class RunningTableViewModel @AssistedInject constructor(
                 currentRound = hand.currentRound?.copy(
                     playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
                         if (seatNumber == player.playerSeatNo) {
-                            player.amount += chips
-                            player.move = move
+                            player.amount += chipsActuallyPlayed
+                            player.move = moveActuallyPlayed
                         }
                         player
                     } ?: listOf(),
@@ -397,6 +427,12 @@ class RunningTableViewModel @AssistedInject constructor(
         val playingList =
             players.filter { it.playingStatus == PLAYING }.map { it.seatNumber }.sorted()
 
+        if (playingList.isEmpty()) {
+            onRoundEnd()
+            onHandEnd()
+            return
+        }
+
         val currentIndexInPlayingList = playingList.indexOf(currentPlayer)
         val nextPlayer = playingList[(currentIndexInPlayingList + 1) % playingList.size]
 
@@ -404,6 +440,7 @@ class RunningTableViewModel @AssistedInject constructor(
             onRoundEnd()
             onHandEnd()
         }
+
 
         players.firstOrNull { it.seatNumber == currentPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
             ?.let {
@@ -423,6 +460,8 @@ class RunningTableViewModel @AssistedInject constructor(
 
     private fun updateEndsOn() {
         val currentEndsOn = currentHand?.currentRound?.endsOn
+
+        if (currentEndsOn != currentHand?.currentPlayer) return
 
         val playingList =
             players.filter { it.playingStatus == PLAYING }.sortedBy { it.seatNumber }
@@ -467,6 +506,7 @@ class RunningTableViewModel @AssistedInject constructor(
                     ?: 0
             val playerAmount =
                 players.firstOrNull { it.seatNumber == hand.currentPlayer }?.chips ?: 0
+            currentPlayerMaxLimit = playerAmount
 
             val actions = mutableListOf<PlayerMove>()
 
@@ -497,6 +537,11 @@ class RunningTableViewModel @AssistedInject constructor(
                 move = CHECK
             )
             updateCurrentPlayer()
+
+            if (shouldEndHand()) {
+                onRoundEnd()
+                onHandEnd()
+            }
         }
     }
 
@@ -579,6 +624,11 @@ class RunningTableViewModel @AssistedInject constructor(
             player
         }.toMutableList()
 
+        if (shouldEndHand()) {
+            onRoundEnd()
+            onHandEnd()
+        }
+
         players.firstOrNull { it.seatNumber == foldedPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
             ?.let {
                 updateEndsOn()
@@ -596,6 +646,29 @@ class RunningTableViewModel @AssistedInject constructor(
         }
     }
 
+    private fun shouldEndHand(): Boolean {
+        val totalFolds = players.filter {
+            it.playingStatus == PlayingStatus.EMPTY ||
+                it.playingStatus == FOLDED
+        }.size
+        val playing = players.filter {
+            it.playingStatus == PLAYING
+        }.size
+
+        val totalFoldsAndAllIns = players.filter {
+            it.playingStatus == PlayingStatus.EMPTY ||
+                it.playingStatus == PlayingStatus.ALL_IN ||
+                it.playingStatus == ALL_IN_ACKNOWLEDGED ||
+                it.playingStatus == FOLDED
+        }.size
+
+        if (totalFolds == 5 && playing == 1)
+            return true
+        if (totalFoldsAndAllIns == 6 || totalFoldsAndAllIns == 5)
+            return true
+        return false
+    }
+
     fun onAllIn() {
         currentHand?.let { hand ->
             val investedAmount =
@@ -607,7 +680,7 @@ class RunningTableViewModel @AssistedInject constructor(
 
             updatePlayerInvestment(
                 seatNumber = hand.currentPlayer,
-                chips = playerAmount - investedAmount,
+                chips = playerAmount,
                 move = ALL_IN
             )
 

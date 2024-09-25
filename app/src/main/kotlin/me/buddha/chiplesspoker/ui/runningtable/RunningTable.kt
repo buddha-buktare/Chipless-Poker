@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -33,7 +35,9 @@ fun RunningTableScreen(
     viewModel: RunningTableViewModel
 ) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         Text(
             text = "Current Blind : ${viewModel.blindStructure.blindLevels.getOrNull(viewModel.blindStructure.currentLevel)?.big} / ${
@@ -51,6 +55,7 @@ fun RunningTableScreen(
                 }"
             )
         }
+        Text("Hand No -> ${viewModel.currentHand?.index}")
         Text(text = "Current Street : ${viewModel.currentStreet.name}")
 
         viewModel.players.forEach { player ->
@@ -59,6 +64,9 @@ fun RunningTableScreen(
         }
 
         Text("Current Player -> ${viewModel.currentHand?.currentPlayer}")
+        Text("Dealer -> ${viewModel.currentHand?.dealer}")
+        Text("SB -> ${viewModel.currentHand?.smallBlindPlayer}")
+        Text("BB -> ${viewModel.currentHand?.bigBlindPlayer}")
         Text("Ends On -> ${viewModel.currentHand?.currentRound?.endsOn}")
         if (viewModel.actionsForCurrentPlayer.contains(CALL)) {
             Button(onClick = viewModel::onCall) { Text("Call ${viewModel.callAmount}") }
@@ -82,7 +90,13 @@ fun RunningTableScreen(
                     },
                     modifier = Modifier.width(150.dp)
                 )
-                Button(onClick = { viewModel.onBet(betValue.toLong()) }) { Text("Bet") }
+                if (betValue.isEmpty() || betValue.toLong() < viewModel.currentPlayerMaxLimit) {
+                    if (betValue.isNotEmpty()) {
+                        Button(onClick = { viewModel.onBet(betValue.toLong()) }) { Text("Bet") }
+                    }
+                } else {
+                    Button(onClick = { viewModel.onAllIn() }) { Text("All In") }
+                }
             }
         }
         if (viewModel.actionsForCurrentPlayer.contains(RAISE)) {
@@ -98,7 +112,14 @@ fun RunningTableScreen(
                     },
                     modifier = Modifier.width(150.dp)
                 )
-                Button(onClick = { viewModel.onRaise(raiseValue.toLong()) }) { Text("Raise") }
+                if (raiseValue.isEmpty() || raiseValue.toLong() < viewModel.currentPlayerMaxLimit) {
+                    if (raiseValue.isNotEmpty()) {
+                        Button(onClick = { viewModel.onRaise(raiseValue.toLong()) }) { Text("Raise") }
+                    }
+                } else {
+                    Button(onClick = { viewModel.onAllIn() }) { Text("All In") }
+                }
+
             }
         }
         if (viewModel.actionsForCurrentPlayer.contains(ALL_IN)) {
