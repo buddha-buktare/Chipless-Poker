@@ -9,7 +9,7 @@ class InsertOrReplaceTableUseCase @Inject constructor(
     private val tableRepository: TableRepository
 ) {
 
-    suspend operator fun invoke(table: Table) {
+    suspend operator fun invoke(table: Table): Long {
         return tableRepository.insertOrReplaceTable(
             table.asEntity()
         )
