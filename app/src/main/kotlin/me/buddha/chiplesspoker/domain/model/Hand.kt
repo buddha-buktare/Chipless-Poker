@@ -3,7 +3,7 @@ package me.buddha.chiplesspoker.domain.model
 import me.buddha.chiplesspoker.data.model.HandEntity
 
 data class Hand(
-    val index: Int = 1,
+    val index: Int = 0,
     val dealer: Int = 0,
     val smallBlindPlayer: Int = 1,
     val bigBlindPlayer: Int = 2,
