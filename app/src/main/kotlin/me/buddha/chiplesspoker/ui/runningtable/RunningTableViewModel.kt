@@ -76,24 +76,32 @@ class RunningTableViewModel @AssistedInject constructor(
     }
 
     private fun initiateNewHand() {
-        currentHand = currentHand?.copy(
-            pots = listOf(
-                Pot(
-                    chips = 0,
-                    players = players.filter { it.playingStatus == PLAYING }.map { it.seatNumber },
-                )
-            ),
-            currentRound = Round(
-                playersInvestment = players.map { player ->
-                    PlayerInvestment(
-                        playerSeatNo = player.seatNumber,
-                        amount = 0
+        if (players.filter { it.playingStatus == PLAYING }.size < 2) {
+            println("No game can be played")
+            return
+        }
+        currentHand?.let { hand ->
+            currentHand = hand.copy(
+                index = hand.index + 1,
+                pots = listOf(
+                    Pot(
+                        chips = 0,
+                        players = players.filter { it.playingStatus == PLAYING }
+                            .map { it.seatNumber },
                     )
-                },
-                currentMaxBet = blindStructure.blindLevels[blindStructure.currentLevel].big,
-                endsOn = currentHand?.bigBlindPlayer ?: 0
-            ),
-        )
+                ),
+                currentRound = Round(
+                    playersInvestment = players.map { player ->
+                        PlayerInvestment(
+                            playerSeatNo = player.seatNumber,
+                            amount = 0
+                        )
+                    },
+                    currentMaxBet = blindStructure.blindLevels[blindStructure.currentLevel].big,
+                    endsOn = currentHand?.bigBlindPlayer ?: 0
+                ),
+            )
+        }
 
         currentHand?.let { hand ->
             updatePlayerInvestment(
@@ -272,7 +280,6 @@ class RunningTableViewModel @AssistedInject constructor(
             }
 
             currentHand = hand.copy(
-                index = hand.index + 1,
                 dealer = nextDealer,
                 smallBlindPlayer = nextSB,
                 bigBlindPlayer = nextBB,
@@ -424,14 +431,10 @@ class RunningTableViewModel @AssistedInject constructor(
     private fun updateCurrentPlayer() {
 
         val currentPlayer = currentHand?.currentPlayer
-        val playingList =
-            players.filter { it.playingStatus == PLAYING }.map { it.seatNumber }.sorted()
-
-        if (playingList.isEmpty()) {
-            onRoundEnd()
-            onHandEnd()
-            return
-        }
+        val playingList = players
+            .filter { it.playingStatus == PLAYING || it.seatNumber == currentPlayer } /* In case of Fold and All In*/
+            .map { it.seatNumber }
+            .sorted()
 
         val currentIndexInPlayingList = playingList.indexOf(currentPlayer)
         val nextPlayer = playingList[(currentIndexInPlayingList + 1) % playingList.size]
@@ -439,6 +442,7 @@ class RunningTableViewModel @AssistedInject constructor(
         if (currentPlayer == nextPlayer) {
             onRoundEnd()
             onHandEnd()
+            return
         }
 
 
@@ -616,7 +620,6 @@ class RunningTableViewModel @AssistedInject constructor(
                 move = FOLD
             )
         }
-        updateCurrentPlayer()
         players = players.map { player ->
             if (player.seatNumber == foldedPlayer) {
                 player.playingStatus = FOLDED
@@ -644,6 +647,7 @@ class RunningTableViewModel @AssistedInject constructor(
                 }
             )
         }
+        updateCurrentPlayer()
     }
 
     private fun shouldEndHand(): Boolean {
@@ -671,10 +675,6 @@ class RunningTableViewModel @AssistedInject constructor(
 
     fun onAllIn() {
         currentHand?.let { hand ->
-            val investedAmount =
-                hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == hand.currentPlayer }?.amount
-                    ?: 0
-
             val playerAmount =
                 players.firstOrNull { it.seatNumber == hand.currentPlayer }?.chips ?: 0
 
