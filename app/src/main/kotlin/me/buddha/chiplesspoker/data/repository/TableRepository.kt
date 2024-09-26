@@ -8,7 +8,7 @@ interface TableRepository {
 
     fun getTableById(id: Long): Flow<TableEntity>
 
-    suspend fun insertOrReplaceTable(tableEntity: TableEntity)
+    suspend fun insertOrReplaceTable(tableEntity: TableEntity): Long
 
     suspend fun delete(tableEntity: TableEntity)
 
