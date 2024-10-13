@@ -2,15 +2,15 @@ package me.buddha.chiplesspoker.domain.navigation
 
 import kotlinx.serialization.Serializable
 
-class Destination {
+sealed interface Destination {
     @Serializable
-    object Home
+    data object Home : Destination
 
     @Serializable
-    object CreateTable
+    data object CreateTable : Destination
 
     @Serializable
     data class RunningTable(
         val id: Long,
-    )
+    ) : Destination
 }

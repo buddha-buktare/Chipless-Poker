@@ -16,7 +16,7 @@ import me.buddha.chiplesspoker.domain.model.Hand
 import me.buddha.chiplesspoker.domain.model.Player
 import me.buddha.chiplesspoker.domain.model.Table
 import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
-import me.buddha.chiplesspoker.domain.navigation.NavigationService
+import me.buddha.chiplesspoker.domain.navigation.Navigator
 import me.buddha.chiplesspoker.domain.usecase.InsertOrReplaceTableUseCase
 import me.buddha.chiplesspoker.domain.utils.DurationUnit
 import me.buddha.chiplesspoker.domain.utils.PlayingStatus.EMPTY
@@ -27,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateTableViewModel @Inject constructor(
     private val insertOrReplaceTableUseCase: InsertOrReplaceTableUseCase,
-    private val navigationService: NavigationService
+    private val navigator: Navigator,
 ) : ViewModel() {
 
     var initialBuyInAmount by mutableLongStateOf(1000L)
@@ -160,7 +160,7 @@ class CreateTableViewModel @Inject constructor(
                     currentHand = getHandDetails(players.filter { it.seatNumber != -1 }[0].seatNumber)
                 )
             )
-            navigationService.navController.navigate(RunningTable(id = id))
+            navigator.navigate(RunningTable(id = id))
         }
     }
 

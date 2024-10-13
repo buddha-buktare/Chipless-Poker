@@ -627,11 +627,6 @@ class RunningTableViewModel @AssistedInject constructor(
             player
         }.toMutableList()
 
-        if (shouldEndHand()) {
-            onRoundEnd()
-            onHandEnd()
-        }
-
         players.firstOrNull { it.seatNumber == foldedPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
             ?.let {
                 updateEndsOn()
@@ -648,28 +643,33 @@ class RunningTableViewModel @AssistedInject constructor(
             )
         }
         updateCurrentPlayer()
+        if (shouldEndHand()) {
+            onRoundEnd()
+            onHandEnd()
+        }
     }
 
     private fun shouldEndHand(): Boolean {
         val totalFolds = players.filter {
             it.playingStatus == PlayingStatus.EMPTY ||
-                it.playingStatus == FOLDED
+                it.playingStatus == FOLDED ||
+                it.playingStatus == ALL_IN_ACKNOWLEDGED
         }.size
         val playing = players.filter {
             it.playingStatus == PLAYING
         }.size
 
-        val totalFoldsAndAllIns = players.filter {
-            it.playingStatus == PlayingStatus.EMPTY ||
-                it.playingStatus == PlayingStatus.ALL_IN ||
-                it.playingStatus == ALL_IN_ACKNOWLEDGED ||
-                it.playingStatus == FOLDED
-        }.size
+        // val totalFoldsAndAllIns = players.filter {
+        //     it.playingStatus == PlayingStatus.EMPTY ||
+        //         it.playingStatus == PlayingStatus.ALL_IN ||
+        //         it.playingStatus == ALL_IN_ACKNOWLEDGED ||
+        //         it.playingStatus == FOLDED
+        // }.size
 
         if (totalFolds == 5 && playing == 1)
             return true
-        if (totalFoldsAndAllIns == 6 || totalFoldsAndAllIns == 5)
-            return true
+        // if (totalFoldsAndAllIns == 6 || totalFoldsAndAllIns == 5)
+        //     return true
         return false
     }
 
@@ -682,6 +682,15 @@ class RunningTableViewModel @AssistedInject constructor(
                 seatNumber = hand.currentPlayer,
                 chips = playerAmount,
                 move = ALL_IN
+            )
+
+            currentHand = hand.copy(
+                currentRound = hand.currentRound?.copy(
+                    currentMaxBet = Math.max(
+                        hand.currentRound?.currentMaxBet ?: 0L,
+                        playerAmount
+                    )
+                )
             )
 
             players = players.map { player ->
