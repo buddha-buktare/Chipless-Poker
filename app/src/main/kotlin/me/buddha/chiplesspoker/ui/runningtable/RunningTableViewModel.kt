@@ -1,6 +1,10 @@
 package me.buddha.chiplesspoker.ui.runningtable
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -16,6 +20,8 @@ import me.buddha.chiplesspoker.domain.model.Player
 import me.buddha.chiplesspoker.domain.model.PlayerInvestment
 import me.buddha.chiplesspoker.domain.model.Pot
 import me.buddha.chiplesspoker.domain.model.Round
+import me.buddha.chiplesspoker.domain.navigation.Destination
+import me.buddha.chiplesspoker.domain.navigation.Navigator
 import me.buddha.chiplesspoker.domain.usecase.GetTableByIdUseCase
 import me.buddha.chiplesspoker.domain.utils.PlayerMove
 import me.buddha.chiplesspoker.domain.utils.PlayerMove.ALL_IN
@@ -41,6 +47,7 @@ import me.buddha.chiplesspoker.domain.utils.StreetType.TURN
 class RunningTableViewModel @AssistedInject constructor(
     @Assisted val id: Long,
     private val getTableByIdUseCase: GetTableByIdUseCase,
+    private val navigator: Navigator
 ) : ViewModel() {
 
     var players = mutableListOf<Player>()
@@ -51,9 +58,14 @@ class RunningTableViewModel @AssistedInject constructor(
     var callAmount by mutableStateOf(0L)
     var currentPlayerMaxLimit by mutableStateOf(0L)
     var actionsForCurrentPlayer = mutableListOf<PlayerMove>()
-    var winners = mutableListOf<MutableList<Int>>(mutableListOf<Int>())
+    var winners = mutableStateListOf<MutableList<Int>>(mutableListOf<Int>())
+    var individualWinners = mutableStateMapOf<Int, Long>()
 
     var showPotDetails by mutableStateOf(false)
+    var showFinalDistributionDialog by mutableStateOf(false)
+
+    var allInText by mutableStateOf("")
+    var callText by mutableStateOf("")
 
     init {
         getTableDetails(id)
@@ -312,6 +324,7 @@ class RunningTableViewModel @AssistedInject constructor(
     private fun onHandEnd() {
         showPotDetails = true
         winners.clear()
+        individualWinners.clear()
         currentHand?.pots?.forEach { _ ->
             winners.add(mutableListOf())
         }
@@ -336,19 +349,25 @@ class RunningTableViewModel @AssistedInject constructor(
 
             hand.pots.forEachIndexed { index, pot ->
                 if (pot.players.size == 1) {
-                    distributeWinningToPlayer(pot.players[0], pot.chips)
+                    // distributeWinningToPlayer(pot.players[0], pot.chips)
+                    calculateEachPlayersWinning(pot.players[0], pot.chips)
                 } else {
                     val chipsPerPerson = pot.chips / winners[index].size
                     var extraChips = pot.chips % winners[index].size
                     winners[index].forEach { winner ->
-                        distributeWinningToPlayer(winner, chipsPerPerson)
+                        // distributeWinningToPlayer(winner, chipsPerPerson)
+                        calculateEachPlayersWinning(winner, chipsPerPerson)
                     }
 
                     var distributionOrderIndex = 0
                     while (extraChips > 0 && distributionOrderIndex < distributionOrder.size) {
                         winners[index].firstOrNull { it == distributionOrder[distributionOrderIndex] }
                             ?.let {
-                                distributeWinningToPlayer(
+                                // distributeWinningToPlayer(
+                                //     distributionOrder[distributionOrderIndex],
+                                //     1
+                                // )
+                                calculateEachPlayersWinning(
                                     distributionOrder[distributionOrderIndex],
                                     1
                                 )
@@ -359,7 +378,7 @@ class RunningTableViewModel @AssistedInject constructor(
                 }
             }
         }
-        clearHandData()
+        showFinalDistributionDialog = true
     }
 
     private fun updatePlayerInvestment(seatNumber: Int, chips: Long, move: PlayerMove) {
@@ -413,19 +432,6 @@ class RunningTableViewModel @AssistedInject constructor(
                 player
             }
         }.toMutableList()
-
-        // currentHand?.let { hand ->
-        //     currentHand = hand.copy(
-        //         currentRound = hand.currentRound?.copy(
-        //             playersInvestment = hand.currentRound?.playersInvestment?.map { player ->
-        //                 if (seatNumber == player.playerSeatNo) {
-        //                     player.amount += chips
-        //                 }
-        //                 player
-        //             } ?: listOf(),
-        //         )
-        //     )
-        // }
     }
 
     private fun updateCurrentPlayer() {
@@ -445,17 +451,16 @@ class RunningTableViewModel @AssistedInject constructor(
             return
         }
 
-
-        players.firstOrNull { it.seatNumber == currentPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
-            ?.let {
-                updateEndsOn()
-            }
-
         currentHand?.let { hand ->
             currentHand = hand.copy(
                 currentPlayer = nextPlayer
             )
         }
+
+        players.firstOrNull { it.seatNumber == currentPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
+            ?.let {
+                updateEndsOn()
+            }
         currentPlayer?.let {
             checkForRoundEnd(currentPlayer, nextPlayer)
         }
@@ -490,7 +495,7 @@ class RunningTableViewModel @AssistedInject constructor(
                 if (oldPlayer == hand.bigBlindPlayer) {
                     val oldPlayerMove =
                         hand.currentRound?.playersInvestment?.firstOrNull { it.playerSeatNo == oldPlayer }?.move
-                    if (oldPlayerMove == CHECK || oldPlayerMove == FOLD) {
+                    if (oldPlayerMove == CHECK || oldPlayerMove == FOLD || oldPlayerMove == CALL) {
                         onRoundEnd()
                     }
                 }
@@ -520,8 +525,9 @@ class RunningTableViewModel @AssistedInject constructor(
                 actions.add(CHECK)
                 actions.add(BET)
             } else {
-                if (currentMaxBet >= (playerAmount - investedAmount)) {
+                if (currentMaxBet >= playerAmount) {
                     actions.add(ALL_IN)
+                    allInText = playerAmount.toString()
                 } else {
                     actions.add(CALL)
                     actions.add(RAISE)
@@ -566,7 +572,15 @@ class RunningTableViewModel @AssistedInject constructor(
         }
     }
 
-    fun onBet(amount: Long) {
+    fun onBet(amount: Long, context: Context) {
+        if (amount < blindStructure.blindLevels[blindStructure.currentLevel].big) {
+            Toast.makeText(
+                context,
+                "Please Select Min bet ${blindStructure.blindLevels[blindStructure.currentLevel].big}",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
         currentHand?.let { hand ->
             updatePlayerInvestment(
                 seatNumber = hand.currentPlayer,
@@ -585,7 +599,15 @@ class RunningTableViewModel @AssistedInject constructor(
         }
     }
 
-    fun onRaise(amount: Long) {
+    fun onRaise(amount: Long, context: Context) {
+        if (amount < blindStructure.blindLevels[blindStructure.currentLevel].big) {
+            Toast.makeText(
+                context,
+                "Please Select Min Raise ${blindStructure.blindLevels[blindStructure.currentLevel].big}",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
         currentHand?.let { hand ->
             val currentMaxBet = hand.currentRound?.currentMaxBet ?: 0
             val investedAmount =
@@ -627,11 +649,6 @@ class RunningTableViewModel @AssistedInject constructor(
             player
         }.toMutableList()
 
-        if (shouldEndHand()) {
-            onRoundEnd()
-            onHandEnd()
-        }
-
         players.firstOrNull { it.seatNumber == foldedPlayer && (it.playingStatus == FOLDED || it.playingStatus == PlayingStatus.ALL_IN) }
             ?.let {
                 updateEndsOn()
@@ -648,28 +665,33 @@ class RunningTableViewModel @AssistedInject constructor(
             )
         }
         updateCurrentPlayer()
+        if (shouldEndHand()) {
+            onRoundEnd()
+            onHandEnd()
+        }
     }
 
     private fun shouldEndHand(): Boolean {
-        val totalFolds = players.filter {
+        val totalFolds = players.count {
             it.playingStatus == PlayingStatus.EMPTY ||
-                it.playingStatus == FOLDED
-        }.size
-        val playing = players.filter {
+                it.playingStatus == FOLDED ||
+                it.playingStatus == ALL_IN_ACKNOWLEDGED
+        }
+
+        val totalAllIns = players.count {
+            it.playingStatus == PlayingStatus.ALL_IN
+        }
+
+        val playing = players.count {
             it.playingStatus == PLAYING
-        }.size
+        }
 
-        val totalFoldsAndAllIns = players.filter {
-            it.playingStatus == PlayingStatus.EMPTY ||
-                it.playingStatus == PlayingStatus.ALL_IN ||
-                it.playingStatus == ALL_IN_ACKNOWLEDGED ||
-                it.playingStatus == FOLDED
-        }.size
+        // If only one player is still actively playing, the hand should end
+        if (totalFolds == 5 && playing == 1) return true
 
-        if (totalFolds == 5 && playing == 1)
-            return true
-        if (totalFoldsAndAllIns == 6 || totalFoldsAndAllIns == 5)
-            return true
+        // If all active players are either ALL-IN or folded, end the hand
+        if (playing == 0 && totalAllIns >= 1) return true
+
         return false
     }
 
@@ -682,6 +704,15 @@ class RunningTableViewModel @AssistedInject constructor(
                 seatNumber = hand.currentPlayer,
                 chips = playerAmount,
                 move = ALL_IN
+            )
+
+            currentHand = hand.copy(
+                currentRound = hand.currentRound?.copy(
+                    currentMaxBet = Math.max(
+                        hand.currentRound?.currentMaxBet ?: 0L,
+                        playerAmount
+                    ),
+                ),
             )
 
             players = players.map { player ->
@@ -697,13 +728,54 @@ class RunningTableViewModel @AssistedInject constructor(
     fun onAddWinner(potIndex: Int, player: Int) {
 
         if (winners[potIndex].contains(player)) {
-            winners[potIndex].apply {
+            winners[potIndex] = winners[potIndex].toMutableList().apply {
                 remove(player)
             }
         } else {
-            winners[potIndex].apply {
+            winners[potIndex] = winners[potIndex].toMutableList().apply {
                 add(player)
             }
+        }
+    }
+
+    fun onConfirmWinnerSelection(context: Context) {
+        if (winners.any { it.size < 1 }) {
+            Toast.makeText(
+                context,
+                "Please Select at least 1 winner for each pot",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            onDistribute()
+        }
+    }
+
+    fun onConfirmDistribution() {
+        individualWinners.forEach {
+            distributeWinningToPlayer(it.key, it.value)
+        }
+        showFinalDistributionDialog = false
+        if (players.filter { it.playingStatus == PLAYING }.size < 2) {
+            viewModelScope.launch {
+                navigator.navigate(Destination.Home) {
+                    popUpTo(Destination.Home) { inclusive = true }
+                }
+            }
+        }
+        clearHandData()
+    }
+
+    private fun calculateEachPlayersWinning(player: Int, chips: Long) {
+        if (individualWinners.contains(player)) {
+            individualWinners[player] = individualWinners[player]!! + chips
+        } else {
+            individualWinners[player] = chips
+        }
+    }
+
+    fun onConfirmExit() {
+        viewModelScope.launch {
+            navigator.navigateUp()
         }
     }
 
