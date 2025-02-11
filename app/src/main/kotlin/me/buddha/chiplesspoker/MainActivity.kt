@@ -5,18 +5,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import me.buddha.chiplesspoker.domain.navigation.Destination.CreateTable
+import me.buddha.chiplesspoker.domain.navigation.Destination.Home
 import me.buddha.chiplesspoker.domain.navigation.Destination.RunningTable
 import me.buddha.chiplesspoker.domain.navigation.NavigationAction
 import me.buddha.chiplesspoker.domain.navigation.Navigator
 import me.buddha.chiplesspoker.domain.navigation.ObserveAsEvents
 import me.buddha.chiplesspoker.ui.createtable.CreateTableScreen
-import me.buddha.chiplesspoker.ui.runningtable.RunningTableScreen
+import me.buddha.chiplesspoker.ui.home.HomeScreen
+import me.buddha.chiplesspoker.ui.runningtable.RunningTable
 import me.buddha.chiplesspoker.ui.runningtable.RunningTableViewModel
 import me.buddha.chiplesspoker.ui.theme.ChiplessPokerTheme
 import javax.inject.Inject
@@ -54,8 +58,16 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = CreateTable,
+                    startDestination = Home,
                 ) {
+                    composable<Home> {
+                        HomeScreen(
+                            navigateToCreateTable = {
+                                lifecycleScope.launch { navigator.navigate(CreateTable) }
+                            }
+                        )
+                    }
+
                     composable<CreateTable> {
                         CreateTableScreen()
                     }
@@ -66,7 +78,10 @@ class MainActivity : ComponentActivity() {
                             hiltViewModel<RunningTableViewModel, RunningTableViewModel.RunningTableViewModelFactory> { factory ->
                                 factory.create(args.id)
                             }
-                        RunningTableScreen(
+                        // RunningTableScreen(
+                        //     viewModel = viewModel
+                        // )
+                        RunningTable(
                             viewModel = viewModel
                         )
                     }
