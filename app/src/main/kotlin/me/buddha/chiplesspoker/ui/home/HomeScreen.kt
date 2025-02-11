@@ -54,10 +54,6 @@ fun HomeScreen(
         ) {
             Text("Start New Game", fontSize = 18.sp, color = Color.White)
         }
-
-        Button(onClick = { throw RuntimeException("Test Crash!") }) {
-            Text("Crash App")
-        }
     }
 }
 
