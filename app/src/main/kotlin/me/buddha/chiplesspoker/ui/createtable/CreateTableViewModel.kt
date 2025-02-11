@@ -1,5 +1,7 @@
 package me.buddha.chiplesspoker.ui.createtable
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -36,6 +38,9 @@ class CreateTableViewModel @Inject constructor(
         repeat(6) { add(Player(playingStatus = EMPTY)) }
     }
 
+    init {
+        addBlindLevel()
+    }
 
     fun updateInitialBuyIn(buyIn: Long) {
         initialBuyInAmount = buyIn
@@ -81,7 +86,14 @@ class CreateTableViewModel @Inject constructor(
         blindStructure = blindStructure.copy(
             blindLevels = blindStructure.blindLevels.mapIndexed { index, level ->
                 if (index == levelIndex) {
-                    level.copy(big = bigBlind)
+                    level.copy(
+                        big = bigBlind,
+                        small = if (bigBlind < level.small) {
+                            bigBlind
+                        } else {
+                            level.small
+                        }
+                    )
                 } else {
                     level
                 }
@@ -94,6 +106,14 @@ class CreateTableViewModel @Inject constructor(
             blindLevels = blindStructure.blindLevels.mapIndexed { index, level ->
                 if (index == levelIndex) {
                     level.copy(small = smallBlind)
+                    level.copy(
+                        small = smallBlind,
+                        big = if (smallBlind > level.big) {
+                            smallBlind
+                        } else {
+                            level.big
+                        }
+                    )
                 } else {
                     level
                 }
@@ -145,26 +165,34 @@ class CreateTableViewModel @Inject constructor(
     }
 
     fun removePlayer(index: Int) {
-        players[index] = Player()
+        players[index] = Player(
+            playingStatus = EMPTY
+        )
     }
 
-    fun startTable() {
+    fun startTable(context: Context) {
         viewModelScope.launch {
-            players = players.sortedBy { it.seatNumber }.toMutableStateList()
-            val id = insertOrReplaceTableUseCase(
-                Table(
-                    initialBuyIn = initialBuyInAmount,
-                    street = PREFLOP,
-                    blindStructure = blindStructure,
-                    players = players,
-                    currentHand = getHandDetails(players.filter { it.seatNumber != -1 }[0].seatNumber)
+            if (players.filter { it.playingStatus == PLAYING }.size < 2) {
+                Toast.makeText(context, "Add at least 2 players to start", Toast.LENGTH_SHORT)
+                    .show()
+            } else {
+                players = players.toMutableStateList()
+                val id = insertOrReplaceTableUseCase(
+                    Table(
+                        initialBuyIn = initialBuyInAmount,
+                        street = PREFLOP,
+                        blindStructure = blindStructure,
+                        players = players,
+                        currentHand = getHandDetails(players.filter { it.seatNumber != -1 }[0].seatNumber)
+                    )
                 )
-            )
-            navigator.navigate(RunningTable(id = id))
+                navigator.navigate(RunningTable(id = id))
+            }
         }
     }
 
     fun getHandDetails(dealerIndex: Int): Hand {
+        val dealerIndex = 0
         val playingList = players.filter { it.playingStatus == PLAYING }.sortedBy { it.seatNumber }
         val smallBlindIndex = if (playingList.size == 2) {
             dealerIndex
