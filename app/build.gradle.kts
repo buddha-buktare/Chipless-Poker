@@ -16,8 +16,8 @@ android {
         applicationId = "me.buddha.chiplesspoker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = libs.versions.app.version.code.get().toInt()
+        versionName = libs.versions.app.version.name.get()
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")

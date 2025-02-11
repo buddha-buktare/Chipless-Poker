@@ -1,4 +1,6 @@
 [versions]
+app-version-name = "1.0.0"
+app-version-code = "1"
 agp = "8.5.0"
 coilCompose = "2.4.0"
 firebaseBom = "33.9.0"
