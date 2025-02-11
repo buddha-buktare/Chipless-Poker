@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlinAndroidKsp)
     alias(libs.plugins.hiltAndroid)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.googleServices)
+    id("com.google.firebase.crashlytics") // Crashlytics Plugin
 }
 
 android {
@@ -88,4 +90,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
+
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
 }
