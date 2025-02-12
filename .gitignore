@@ -15,3 +15,5 @@
 local.properties
 /.idea/*
 chiplesspoker-keystore
+app/release/
+app/schemas/
