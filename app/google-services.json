@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "17503412977",
+    "project_id": "chipless-poker",
+    "storage_bucket": "chipless-poker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:17503412977:android:0246c88875a13cd5fa7f50",
+        "android_client_info": {
+          "package_name": "me.buddha.chiplesspoker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoXGe7Olm8ARRn-u8sn8oQ954CDMGC9Ao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
