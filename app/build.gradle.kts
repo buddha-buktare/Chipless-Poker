@@ -1,3 +1,5 @@
+import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader.SYMBOL_TABLE
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -37,6 +39,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             isDebuggable = false
+            ndk.debugSymbolLevel = SYMBOL_TABLE
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
